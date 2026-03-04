@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ValtraIMU": {
+      "commandName": "Project",
+      "commandLineArgs": "fake.txt"
+    }
+  }
+}

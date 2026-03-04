@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Title>MotionPlatform controller with IMU+GNSS data from Valtra</Title>
+    <Authors>Oleg Spakov</Authors>
+    <Company>Tampere University</Company>
+    <Description>Reads IMU+GNSS log data collected by Valtra and streams this data into MotionPlatform using ForceSeatMI API</Description>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="SharpDialogs" Version="1.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ForceSeatMI\ForceSeatMI.csproj" />
+  </ItemGroup>
+
+</Project>

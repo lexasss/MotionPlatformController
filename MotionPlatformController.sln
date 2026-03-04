@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37012.4 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValtraIMU", "ValtraIMU\ValtraIMU.csproj", "{95479DE9-18CF-4650-8F4A-893862385A04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForceSeatMI", "ForceSeatMI\ForceSeatMI.csproj", "{EAE9EACD-EAE2-4C03-8B20-D862641D6165}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{95479DE9-18CF-4650-8F4A-893862385A04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95479DE9-18CF-4650-8F4A-893862385A04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95479DE9-18CF-4650-8F4A-893862385A04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95479DE9-18CF-4650-8F4A-893862385A04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAE9EACD-EAE2-4C03-8B20-D862641D6165}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAE9EACD-EAE2-4C03-8B20-D862641D6165}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAE9EACD-EAE2-4C03-8B20-D862641D6165}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAE9EACD-EAE2-4C03-8B20-D862641D6165}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2415F39A-B4E8-4B81-A08E-2DFD9F548ECF}
+	EndGlobalSection
+EndGlobal

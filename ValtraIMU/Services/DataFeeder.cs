@@ -1,0 +1,84 @@
+﻿using MotionSystems;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+namespace ValtraIMU.Services;
+
+/// <summary>
+/// Base class for feeding data to MotionPlatform using ForceSeatMI.
+/// It handles the main loop and timing, while descendants implement <see cref="SendData">SendData</see> to send data 
+/// and set <see cref="_nextSampleTimestamp">_nextSampleTimestamp</see>.
+/// </summary>
+internal abstract class DataFeeder
+{
+    public DataFeeder(ForceSeatMI_NET8 mi)
+    {
+        _mi = mi;
+    }
+
+    /// <summary>
+    /// Starts and manages the main simulation loop: the MP control, periodic data transmission,
+    /// MP status display, and graceful shutdown upon user request.
+    /// </summary>
+    /// <remarks>This method is blocking and should be called from a thread that can safely wait for user input.
+    /// Subsequent calls to this method without proper cleanup may result in unexpected behavior.</remarks>
+    public virtual void Run()
+    {
+        TimeBeginPeriod(1);
+
+        _mi.BeginMotionControl();
+
+        var printer = new StatusPrinter();
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
+        _nextSampleTimestamp = 0;
+
+        Console.WriteLine("Press 'q' to exit");
+
+        while (true)
+        {
+            if (Console.KeyAvailable && Console.ReadKey().KeyChar == 'q')
+            {
+                Console.CursorLeft--;
+                break;
+            }
+
+            if (!SendData())
+                break;
+
+            if (!printer.PrintStatus(_mi))
+                break;
+
+            while (stopWatch.ElapsedMilliseconds < _nextSampleTimestamp)
+            {
+                Thread.Sleep(1);
+            }
+        }
+
+        stopWatch.Stop();
+        _mi.EndMotionControl();
+
+        Console.WriteLine("Stopped...");
+
+        TimeEndPeriod(1);
+    }
+
+    // Internal
+
+    protected ForceSeatMI_NET8 _mi;
+    protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.
+
+    /// <summary>
+    /// To be implemented by descendants to send data and set <see cref="_nextSampleTimestamp">_nextSampleTimestamp</see> for the next sample.
+    /// </summary>
+    /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
+    protected abstract bool SendData();
+
+
+    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    private static extern uint TimeBeginPeriod(uint uMilliseconds);
+
+    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+    private static extern uint TimeEndPeriod(uint uMilliseconds);
+}
