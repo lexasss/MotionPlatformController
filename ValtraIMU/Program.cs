@@ -56,6 +56,11 @@ internal class Program
                 new Services.IMUDataFeeder(new ForceSeatMI_NET8(), data);
 
             feeder.Run();
+
+            Console.Write("Parking the platform... ");
+            mi.Park(FSMI_ParkMode.Normal);
+            Thread.Sleep(3000);
+            Console.WriteLine("done.");
         }
     }
 }

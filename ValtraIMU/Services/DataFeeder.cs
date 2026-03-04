@@ -57,9 +57,10 @@ internal abstract class DataFeeder
         }
 
         stopWatch.Stop();
-        _mi.EndMotionControl();
 
-        Console.WriteLine("Stopped...");
+        Console.WriteLine("Stopped.");
+
+        _mi.EndMotionControl();
 
         TimeEndPeriod(1);
     }
