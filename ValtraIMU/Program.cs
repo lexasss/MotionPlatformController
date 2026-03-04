@@ -8,17 +8,19 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        // Set the US-culture across the application to avoid decimal point parsing/logging issues
+        // Set the US-culture across the application to avoid decimal point parsing issues
         var culture = CultureInfo.GetCultureInfo("en-US");
         CultureInfo.DefaultThreadCurrentCulture = culture;
         Thread.CurrentThread.CurrentCulture = culture;
 
-        if (!Services.Settings.TryGetInstance(out Services.Settings settings, out string? error))
+        // Get settings
+        if (!Settings.TryGetInstance(out Settings settings, out string? error))
         {
             Console.WriteLine(error);
             return;
         }
 
+        // Get data provider
         Services.IMUDataProvider? dataProvider = null;
 
         if (!File.Exists(settings.Filename))
@@ -37,6 +39,7 @@ internal class Program
             Console.WriteLine("Simulating data.");
         }
 
+        // Run the feeder
         using (var mi = new ForceSeatMI_NET8())
         {
             if (!mi.IsLoaded())

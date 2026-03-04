@@ -1,10 +1,10 @@
 ﻿using CommandLine;
 
-namespace ValtraIMU.Services;
+namespace ValtraIMU;
 
 internal class Settings
 {
-    [Option('f', "file", Required = false, HelpText = "Valtra IMU+GNSS data")]
+    [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data")]
     public string? Filename { get; set; }
 
     [Option('v', "verbose", Required = false, HelpText = "Debug info is printed in the verbose mode.")]
@@ -29,12 +29,6 @@ internal class Settings
         settings = _instance ?? new Settings();
         return _instance != null;
     }
-
-    /// <summary>
-    /// IMPORTANT! The constructor must not be used explicitely, rather use <see cref="TryGetInstance">TryGetInstance</see>.
-    /// </summary>
-    public Settings() { }
-
 
     // Internal
 
