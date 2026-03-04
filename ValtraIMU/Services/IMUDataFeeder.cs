@@ -8,9 +8,9 @@ namespace ValtraIMU.Services;
 /// </summary>
 internal class IMUDataFeeder : DataFeeder
 {
-    public IMUDataFeeder(ForceSeatMI_NET8 mi, Models.IMUData[] data) : base(mi)
+    public IMUDataFeeder(ForceSeatMI_NET8 mi, IMUDataProvider dataProvider) : base(mi)
     {
-        _dataEnumerator = (data as IEnumerable<Models.IMUData>).GetEnumerator();
+        _dataProvider = dataProvider;
         _telemetry = FSMI_TelemetryACE.Prepare();
     }
 
@@ -22,30 +22,30 @@ internal class IMUDataFeeder : DataFeeder
     /// <returns>true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected override bool SendData()
     {
-        if (!_dataEnumerator.MoveNext())
+        if (!_dataProvider.MoveNext())
             return false;
 
         _telemetry.state = FSMI_State.NO_PAUSE;
 
-        var item = _dataEnumerator.Current;
+        var data = _dataProvider.Current;
 
-        _telemetry.bodyAngularVelocity[0].yaw = item.AngularVelocity.Z;
-        _telemetry.bodyAngularVelocity[0].pitch = item.AngularVelocity.X;
-        _telemetry.bodyAngularVelocity[0].roll = item.AngularVelocity.Y;
-        _telemetry.bodyLinearAcceleration[0].forward = item.BodyAcceleration.Y;
-        _telemetry.bodyLinearAcceleration[0].upward = item.BodyAcceleration.Z;
-        _telemetry.bodyLinearAcceleration[0].right = item.BodyAcceleration.X;
+        _telemetry.bodyAngularVelocity[0].yaw = (float)data.AngularVelocity.Z;
+        _telemetry.bodyAngularVelocity[0].pitch = (float)data.AngularVelocity.X;
+        _telemetry.bodyAngularVelocity[0].roll = (float)data.AngularVelocity.Y;
+        _telemetry.bodyLinearAcceleration[0].forward = (float)data.BodyAcceleration.Y;
+        _telemetry.bodyLinearAcceleration[0].upward = (float)data.BodyAcceleration.Z;
+        _telemetry.bodyLinearAcceleration[0].right = (float)data.BodyAcceleration.X;
 
-        _telemetry.bodyPitch = item.Orientation.Pitch;
-        _telemetry.bodyRoll = item.Orientation.Roll;
+        _telemetry.bodyPitch = (float)data.Orientation.Pitch;
+        _telemetry.bodyRoll = (float)data.Orientation.Roll;
 
         _mi.SendTelemetryACE(ref _telemetry);
 
-        _nextSampleTimestamp = (int)(1000 * item.GPSTime);
+        _nextSampleTimestamp = data.Time;
 
         return true;
     }
 
-    private IEnumerator<Models.IMUData> _dataEnumerator;
+    private readonly IMUDataProvider _dataProvider;
     private FSMI_TelemetryACE _telemetry;
 }

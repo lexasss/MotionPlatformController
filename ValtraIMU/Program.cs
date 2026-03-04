@@ -19,7 +19,7 @@ internal class Program
             return;
         }
 
-        Models.IMUData[]? data = null;
+        Services.IMUDataProvider? dataProvider = null;
 
         if (!File.Exists(settings.Filename))
         {
@@ -29,7 +29,7 @@ internal class Program
         if (File.Exists(settings.Filename))
         {
             Console.Write($"Loading data from {settings.Filename}...  ");
-            data = Services.IMUDataProvider.LoaFromFile(settings.Filename);
+            dataProvider = new Services.IMUDataProvider(settings.Filename, 1);
             Console.WriteLine("done.");
         }
         else
@@ -51,9 +51,9 @@ internal class Program
             Thread.Sleep(3000);
             Console.WriteLine("done.");
 
-            Services.DataFeeder feeder = data == null ? 
+            Services.DataFeeder feeder = dataProvider == null ? 
                 new Services.DummyDataFeeder(mi) :
-                new Services.IMUDataFeeder(new ForceSeatMI_NET8(), data);
+                new Services.IMUDataFeeder(new ForceSeatMI_NET8(), dataProvider);
 
             feeder.Run();
 

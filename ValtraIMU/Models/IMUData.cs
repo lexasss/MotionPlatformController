@@ -2,66 +2,66 @@
 
 internal record class Coordinates(
     /// <summary>degress</summary>
-    float Latitude,
+    double Latitude,
     /// <summary>degress</summary>
-    float Longitude,
+    double Longitude,
     /// <summary>meters</summary>
-    float Elevation
+    double Elevation
 );
 
 internal record class Position(
     /// <summary>meters</summary>
-    float Easting,
+    double Easting,
     /// <summary>meters</summary>
-    float Northing);
+    double Northing);
 
 internal record class Orientation(
     /// <summary>degrees</summary>
-    float Roll,
+    double Roll,
     /// <summary>degrees</summary>
-    float Pitch,
+    double Pitch,
     /// <summary>degrees</summary>
-    float Heading
+    double Heading
 );
 
 internal record class Velocity(
     /// <summary>m/s</summary>
-    float East,
+    double East,
     /// <summary>m/s</summary>
-    float North,
+    double North,
     /// <summary>m/s</summary>
-    float Up
+    double Up
 );
 
 internal record class AbsoluteAcceleration(
     /// <summary>m/s^2</summary>
-    float East,
+    double East,
     /// <summary>m/s^2</summary>
-    float North,
+    double North,
     /// <summary>m/s^2</summary>
-    float Up);
+    double Up);
 
 internal record class BodyAcceleration(
     /// <summary>m/s^2</summary>
-    float X,
+    double X,
     /// <summary>m/s^2</summary>
-    float Y,
+    double Y,
     /// <summary>m/s^2</summary>
-    float Z
+    double Z
 );
 
 internal record class AngularVelocity(
     /// <summary>degrees/s</summary>
-    float X,
+    double X,
     /// <summary>degrees/s</summary>
-    float Y,
+    double Y,
     /// <summary>degrees/s</summary>
-    float Z
+    double Z
 );
 
 internal record class IMUData(
-    float Week,
-    float GPSTime,
+    int Week,
+    long Time,    // ms
     Coordinates Coordinates,
     Position Position,
     Orientation Orientation,
