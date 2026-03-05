@@ -4,7 +4,7 @@ namespace ValtraIMU;
 
 internal class Settings
 {
-    [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data")]
+    [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data, or 'sim' to use data simulator")]
     public string? Filename { get; set; }
 
     [Option('m', "mode", Required = false, Default = SimulationMode.SineWave, HelpText = "Simulation mode")]

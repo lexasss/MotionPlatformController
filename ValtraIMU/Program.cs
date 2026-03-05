@@ -23,7 +23,7 @@ internal class Program
         var imuDataProvider = Services.IMUDataProvider.Create(ref settings);
         if (imuDataProvider == null)
         {
-            Console.WriteLine("Simulating data.");
+            Console.WriteLine($"Simulation mode {settings.SimulationMode}.");
         }
 
         // Run the feeder

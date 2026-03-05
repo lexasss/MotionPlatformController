@@ -3,8 +3,7 @@
 interface IDataProvider<T> : IEnumerator<T>
 {
     /// <summary>
-    /// An alternative way to provide data.
-    /// Note that this method is not required to be implemented, and the default implementation will return null.
+    /// An alternative way to provide data when data computetation is based on the timestamp.
     /// </summary>
     /// <param name="timestamp">ms</param>
     /// <param name="value">result</param>

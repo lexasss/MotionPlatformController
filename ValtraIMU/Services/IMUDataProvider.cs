@@ -1,6 +1,5 @@
 ﻿using SharpDialogs;
 using System.Collections;
-using ValtraIMU.Models;
 
 namespace ValtraIMU.Services;
 
@@ -42,6 +41,11 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
     {
         IMUDataProvider? result = null;
 
+        if (settings.Filename?.ToLower() == "sim")
+        {
+            return null;
+        }
+
         if (!File.Exists(settings.Filename))
         {
             settings.Filename = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
@@ -79,7 +83,7 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
         _stream = new StreamReader(_filename);
     }
 
-    public bool Get(long timestamp, out IMUData? value)
+    public bool Get(long timestamp, out Models.IMUData? value)
     {
         var result = MoveNext();
         value = result ? Current : null;
