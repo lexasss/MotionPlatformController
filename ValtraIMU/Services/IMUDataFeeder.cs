@@ -8,13 +8,17 @@ namespace ValtraIMU.Services;
 /// </summary>
 internal class IMUDataFeeder : DataFeeder
 {
-    public IMUDataFeeder(ForceSeatMI_NET8 mi, IMUDataProvider dataProvider) : base(mi)
+    public IMUDataFeeder(ForceSeatMI_NET8 mi, Settings settings, IMUDataProvider dataProvider) : base(mi, settings)
     {
         _dataProvider = dataProvider;
         _telemetry = FSMI_TelemetryACE.Prepare();
     }
 
     // Internal
+
+    readonly IMUDataProvider _dataProvider;
+
+    FSMI_TelemetryACE _telemetry;
 
     /// <summary>
     /// Implements the data conversion between IMU+GNSS and MotionPlatform formats and sending logic.
@@ -45,7 +49,4 @@ internal class IMUDataFeeder : DataFeeder
 
         return true;
     }
-
-    private readonly IMUDataProvider _dataProvider;
-    private FSMI_TelemetryACE _telemetry;
 }

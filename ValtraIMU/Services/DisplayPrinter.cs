@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace ValtraIMU.Services;
 
-internal class StatusPrinter
+internal class DisplayPrinter
 {
-    public StatusPrinter()
+    public DisplayPrinter()
     {
         _piSize = (uint)Marshal.SizeOf(_platformInfo);
     }
@@ -80,8 +80,10 @@ internal class StatusPrinter
 
     // Internal
 
+    readonly uint _piSize;
+    
     FSMI_PlatformInfo _platformInfo = new();
-    uint _piSize;
+
     ulong _recentMark = 0;
     bool _isFirstPrint = true;
 }

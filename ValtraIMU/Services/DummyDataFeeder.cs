@@ -4,45 +4,102 @@ namespace ValtraIMU.Services;
 
 /// <summary>
 /// Implements dummy data feeding to MotionPlatform using ForceSeatMI.
-/// Uses sine functions to generate angular velocity and linear acceleration data.
+/// In SineWave mode, uses sine functions to generate angular velocity and linear acceleration data.
+/// In MoveForward mode, simulates a vehicle accelerating to a certain speed, maintaining it, and then decelerating to a stop.
+/// In SwayForward mode, simulates a vehicle swaying up/down by generating pitch angular velocity data.
 /// </summary>
 internal class DummyDataFeeder : DataFeeder
 {
-    public DummyDataFeeder(ForceSeatMI_NET8 mi) : base(mi)
+    public DummyDataFeeder(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
     {
+        _mode = settings.SimulationMode;
         _telemetry = FSMI_TelemetryACE.Prepare();
+
+        if (_mode == SimulationMode.SineWave)
+        {
+            _dataProvider = new SinDataProvider(settings);
+            _extraDataProvider = new SinDataProvider(settings)
+            {
+                Amplitude = 2,  // rad
+                Frequency = 0.5
+            };
+        }
+        else if (_mode == SimulationMode.MoveForward)
+        {
+            _dataProvider = new PulseDataProvider(settings);
+        }
+        else if (_mode == SimulationMode.SwayForward)
+        {
+            _dataProvider = new SinDataProvider(settings);
+        }
+        else
+        {
+            throw new NotImplementedException($"Simulation mode '{_mode}' not yet implemented.");
+        }
     }
 
     // Internal
 
     const int INTERVAL = 4;
 
-    private FSMI_TelemetryACE _telemetry;
+    readonly SimulationMode _mode;
+    readonly IDataProvider<double> _dataProvider;
+    readonly IDataProvider<double>? _extraDataProvider;
+
+    FSMI_TelemetryACE _telemetry;
+
+    double _speed = 0;
 
     /// <summary>
-    /// Sends the fake telemetry data.
+    /// Sends simulated telemetry data.
     /// </summary>
-    /// <returns>always true.</returns>
+    /// <returns>true if there was data to send, false otherwise.</returns>
     protected override bool SendData()
     {
         _telemetry.state = FSMI_State.NO_PAUSE;
 
-        _telemetry.bodyAngularVelocity[0].yaw = 0;
-        _telemetry.bodyAngularVelocity[0].pitch = 0;
-        _telemetry.bodyAngularVelocity[0].roll = (float)CalcSin(_nextSampleTimestamp, 20000, 0.5/*hz*/);
-        _telemetry.bodyLinearAcceleration[0].forward = 0;
-        _telemetry.bodyLinearAcceleration[0].upward = 0;
-        _telemetry.bodyLinearAcceleration[0].right = (float)CalcSin(_nextSampleTimestamp, 10, 0.7/*hz*/);
+        if (!_dataProvider.Get(_nextSampleTimestamp, out double value))
+            return false;
+
+        if (_mode == SimulationMode.SineWave)
+        {
+            double angVelRoll = 0;
+            _extraDataProvider?.Get(_nextSampleTimestamp, out angVelRoll);
+
+            if (!_settings.IsVerbose)
+                Console.WriteLine($"AngularVelocity.Roll: {angVelRoll:F4} rad/s, LinearAcceleleration.Right: {value:F4} m/s²");
+
+            _telemetry.bodyAngularVelocity[0].roll = (float)angVelRoll;
+            _telemetry.bodyLinearAcceleration[0].right = (float)value;
+        }
+        else if (_mode == SimulationMode.MoveForward)
+        {
+            var acceleration = (value - _speed) / ((double)INTERVAL / 1000);
+
+            if (!_settings.IsVerbose)
+                Console.WriteLine($"LinearVelocit.Forward: {value:F4} m/s, LinearAcceleration.Forward: {acceleration:F4} m/s²");
+
+            _telemetry.bodyLinearAcceleration[0].forward = (float)acceleration;
+            _telemetry.bodyLinearVelocity[0].forward = (float)value;
+
+            _speed = value;
+        }
+        else if (_mode == SimulationMode.SwayForward)
+        {
+            if (!_settings.IsVerbose)
+                Console.WriteLine($"AngularVelocity.Pitch: {value:F4} rad/s");
+
+            _telemetry.bodyAngularVelocity[0].pitch = (float)value;
+        }
+        else
+        {
+            throw new NotImplementedException($"Simulation mode '{_mode}' not yet implemented.");
+        }
 
         _mi.SendTelemetryACE(ref _telemetry);
 
         _nextSampleTimestamp += INTERVAL;
 
         return true;
-    }
-
-    private static double CalcSin(double t_ms, double amplitude, double hz)
-    {
-        return amplitude * Math.Sin((2.0 / 1000.0 * Math.PI) * hz * t_ms);
     }
 }

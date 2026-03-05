@@ -1,5 +1,4 @@
 ﻿using MotionSystems;
-using SharpDialogs;
 using System.Globalization;
 
 namespace ValtraIMU;
@@ -20,21 +19,9 @@ internal class Program
             return;
         }
 
-        // Get data provider
-        Services.IMUDataProvider? dataProvider = null;
-
-        if (!File.Exists(settings.Filename))
-        {
-            settings.Filename = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
-        }
-
-        if (File.Exists(settings.Filename))
-        {
-            Console.Write($"Loading data from {settings.Filename}...  ");
-            dataProvider = new Services.IMUDataProvider(settings.Filename, 1);
-            Console.WriteLine("done.");
-        }
-        else
+        // Try to create IMU data provider
+        var imuDataProvider = Services.IMUDataProvider.Create(ref settings);
+        if (imuDataProvider == null)
         {
             Console.WriteLine("Simulating data.");
         }
@@ -54,9 +41,9 @@ internal class Program
             Thread.Sleep(3000);
             Console.WriteLine("done.");
 
-            Services.DataFeeder feeder = dataProvider == null ? 
-                new Services.DummyDataFeeder(mi) :
-                new Services.IMUDataFeeder(new ForceSeatMI_NET8(), dataProvider);
+            Services.DataFeeder feeder = imuDataProvider == null ? 
+                new Services.DummyDataFeeder(mi, settings) :
+                new Services.IMUDataFeeder(new ForceSeatMI_NET8(), settings, imuDataProvider);
 
             feeder.Run();
 

@@ -2,7 +2,7 @@
   "profiles": {
     "ValtraIMU": {
       "commandName": "Project",
-      "commandLineArgs": "fake.txt"
+      "commandLineArgs": "fake.txt -m 1"
     }
   }
 }

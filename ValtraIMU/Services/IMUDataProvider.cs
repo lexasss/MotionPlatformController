@@ -1,11 +1,13 @@
-﻿using System.Collections;
+﻿using SharpDialogs;
+using System.Collections;
+using ValtraIMU.Models;
 
 namespace ValtraIMU.Services;
 
 /// <summary>
 /// Reads data from IMU+GNSS data log file
 /// </summary>
-internal class IMUDataProvider : IEnumerator<Models.IMUData>
+internal class IMUDataProvider : IDataProvider<Models.IMUData>
 {
     public Models.IMUData Current => _nextData ?? throw new Exception();
 
@@ -36,7 +38,26 @@ internal class IMUDataProvider : IEnumerator<Models.IMUData>
         }
     }
 
-    #region IEnumerator
+    public static IMUDataProvider? Create(ref Settings settings)
+    {
+        IMUDataProvider? result = null;
+
+        if (!File.Exists(settings.Filename))
+        {
+            settings.Filename = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+        }
+
+        if (File.Exists(settings.Filename))
+        {
+            Console.Write($"Loading data from {settings.Filename}...  ");
+            result = new IMUDataProvider(settings.Filename, settings.SkipRate);
+            Console.WriteLine("done.");
+        }
+
+        return result;
+    }
+
+    #region IDataProvider implementation
 
     public void Dispose()
     {
@@ -56,6 +77,13 @@ internal class IMUDataProvider : IEnumerator<Models.IMUData>
         _stream.Dispose();
 
         _stream = new StreamReader(_filename);
+    }
+
+    public bool Get(long timestamp, out IMUData? value)
+    {
+        var result = MoveNext();
+        value = result ? Current : null;
+        return result;
     }
 
     #endregion

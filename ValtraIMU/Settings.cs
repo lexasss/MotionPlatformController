@@ -7,6 +7,18 @@ internal class Settings
     [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data")]
     public string? Filename { get; set; }
 
+    [Option('m', "mode", Required = false, Default = SimulationMode.SineWave, HelpText = "Simulation mode")]
+    public SimulationMode SimulationMode { get; set; } = SimulationMode.SineWave;
+
+    [Option('s', "skip", Required = false, Default = 0, HelpText = "Skip rate for IMU data")]
+    public int SkipRate { get; set; } = 0;
+
+    [Option('a', "amplitude", Required = false, Default = 1, HelpText = "Signal amplitude in simulation mode")]
+    public double Amplitude { get; set; } = 1;
+
+    [Option('f', "frequency", Required = false, Default = 0.5, HelpText = "Signal frequency in simulation mode")]
+    public double Frequency { get; set; } = 0.5;
+
     [Option('v', "verbose", Required = false, HelpText = "Debug info is printed in the verbose mode.")]
     public bool IsVerbose { get; set; } = false;
 

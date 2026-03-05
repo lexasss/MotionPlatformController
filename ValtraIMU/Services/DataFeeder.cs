@@ -11,9 +11,10 @@ namespace ValtraIMU.Services;
 /// </summary>
 internal abstract class DataFeeder
 {
-    public DataFeeder(ForceSeatMI_NET8 mi)
+    public DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     {
         _mi = mi;
+        _settings = settings;
     }
 
     /// <summary>
@@ -28,7 +29,7 @@ internal abstract class DataFeeder
 
         _mi.BeginMotionControl();
 
-        var printer = new StatusPrinter();
+        var printer = new DisplayPrinter();
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
@@ -47,7 +48,7 @@ internal abstract class DataFeeder
             if (!SendData())
                 break;
 
-            if (!printer.PrintStatus(_mi))
+            if (_settings.IsVerbose && !printer.PrintStatus(_mi))
                 break;
 
             while (stopWatch.ElapsedMilliseconds < _nextSampleTimestamp)
@@ -66,6 +67,8 @@ internal abstract class DataFeeder
     }
 
     // Internal
+
+    protected readonly Settings _settings;
 
     protected ForceSeatMI_NET8 _mi;
     protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.
