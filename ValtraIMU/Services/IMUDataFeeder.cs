@@ -14,12 +14,6 @@ internal class IMUDataFeeder : DataFeeder
         _telemetry = FSMI_TelemetryACE.Prepare();
     }
 
-    // Internal
-
-    readonly IMUDataProvider _dataProvider;
-
-    FSMI_TelemetryACE _telemetry;
-
     /// <summary>
     /// Implements the data conversion between IMU+GNSS and MotionPlatform formats and sending logic.
     /// </summary>
@@ -49,4 +43,12 @@ internal class IMUDataFeeder : DataFeeder
 
         return true;
     }
+
+    #region Internal
+
+    readonly IMUDataProvider _dataProvider;
+
+    FSMI_TelemetryACE _telemetry;
+
+    #endregion
 }

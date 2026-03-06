@@ -61,7 +61,8 @@ internal record class AngularVelocity(
 
 internal record class IMUData(
     int Week,
-    long Time,    // ms
+    /// <summary>milliseconds since the start of the session</summary>
+    long Time,
     Coordinates Coordinates,
     Position Position,
     Orientation Orientation,

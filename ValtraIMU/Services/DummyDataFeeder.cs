@@ -38,18 +38,6 @@ internal class DummyDataFeeder : DataFeeder
         }
     }
 
-    // Internal
-
-    const int INTERVAL = 4;
-
-    readonly SimulationMode _mode;
-    readonly IDataProvider<double> _dataProvider;
-    readonly IDataProvider<double>? _extraDataProvider;
-
-    FSMI_TelemetryACE _telemetry;
-
-    double _speed = 0;
-
     /// <summary>
     /// Sends simulated telemetry data.
     /// </summary>
@@ -102,4 +90,18 @@ internal class DummyDataFeeder : DataFeeder
 
         return true;
     }
+
+    #region Internal
+
+    const int INTERVAL = 4;
+
+    readonly SimulationMode _mode;
+    readonly IDataProvider<double> _dataProvider;
+    readonly SinDataProvider? _extraDataProvider;
+
+    FSMI_TelemetryACE _telemetry;
+
+    double _speed = 0;
+
+    #endregion
 }

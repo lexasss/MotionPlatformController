@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace ValtraIMU.Services;
 
+/// <summary>
+/// Prints info into console.
+/// </summary>
 internal class DisplayPrinter
 {
     public DisplayPrinter()
@@ -16,6 +19,12 @@ internal class DisplayPrinter
         _isFirstPrint = true;
     }
 
+    /// <summary>
+    /// Prints the current status of the platform.
+    /// Should be called in a loop with some delay to see the updates.
+    /// </summary>
+    /// <param name="mi">ForceSeatMI object</param>
+    /// <returns>false if info retrieval has failed, true otherwise</returns>
     public bool PrintStatus(ForceSeatMI_NET8 mi)
     {
         // Get current status
@@ -78,7 +87,7 @@ internal class DisplayPrinter
         return true;
     }
 
-    // Internal
+    #region Internal
 
     readonly uint _piSize;
     
@@ -86,4 +95,6 @@ internal class DisplayPrinter
 
     ulong _recentMark = 0;
     bool _isFirstPrint = true;
+
+    #endregion
 }

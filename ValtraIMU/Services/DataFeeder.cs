@@ -25,9 +25,13 @@ internal abstract class DataFeeder
     /// Subsequent calls to this method without proper cleanup may result in unexpected behavior.</remarks>
     public virtual void Run()
     {
-        TimeBeginPeriod(1);
+        if (!_mi.BeginMotionControl())
+        { 
+            Console.WriteLine("Failed to start motion control!");
+            return;
+        }
 
-        _mi.BeginMotionControl();
+        _ = TimeBeginPeriod(1);
 
         var printer = new DisplayPrinter();
         var stopWatch = new Stopwatch();
@@ -63,10 +67,10 @@ internal abstract class DataFeeder
 
         _mi.EndMotionControl();
 
-        TimeEndPeriod(1);
+        _ = TimeEndPeriod(1);
     }
 
-    // Internal
+    #region Shared with descendants
 
     protected readonly Settings _settings;
 
@@ -79,10 +83,15 @@ internal abstract class DataFeeder
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected abstract bool SendData();
 
+    #endregion
+
+    #region Internal
 
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
     private static extern uint TimeBeginPeriod(uint uMilliseconds);
 
     [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
     private static extern uint TimeEndPeriod(uint uMilliseconds);
+
+    #endregion
 }

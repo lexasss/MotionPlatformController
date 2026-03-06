@@ -3,9 +3,14 @@ using System.Globalization;
 
 namespace ValtraIMU;
 
+/// <summary>
+/// The app, either stream Valtra IMU+GNSS data to ForceSeatPM or simulate it with dummy data, depending on the settings.
+/// </summary>
 internal class Program
 {
-    static void Main(string[] args)
+    static string ProfileName => "SDK - Vehicle Telemetry ACE";
+
+    static void Main()
     {
         // Set the US-culture across the application to avoid decimal point parsing issues
         var culture = CultureInfo.GetCultureInfo("en-US");
@@ -27,30 +32,40 @@ internal class Program
         }
 
         // Run the feeder
-        using (var mi = new ForceSeatMI_NET8())
+        Task.Run(async () => await RunMotionPlatform(settings, imuDataProvider)).Wait();
+    }
+
+    static async Task RunMotionPlatform(Settings settings, Services.IMUDataProvider? imuDataProvider)
+    {
+        using var mi = new ForceSeatMI_NET8();
+
+        if (!mi.IsLoaded())
         {
-            if (!mi.IsLoaded())
-            {
-                Console.WriteLine("ForceSeatMI library has not been found! Please install ForceSeatPM.");
-                return;
-            }
-
-            mi.ActivateProfile("SDK - Vehicle Telemetry ACE");
-
-            Console.Write("Connecting to the MotionPlatform client... ");
-            Thread.Sleep(3000);
-            Console.WriteLine("done.");
-
-            Services.DataFeeder feeder = imuDataProvider == null ? 
-                new Services.DummyDataFeeder(mi, settings) :
-                new Services.IMUDataFeeder(new ForceSeatMI_NET8(), settings, imuDataProvider);
-
-            feeder.Run();
-
-            Console.Write("Parking the platform... ");
-            mi.Park(FSMI_ParkMode.Normal);
-            Thread.Sleep(3000);
-            Console.WriteLine("done.");
+            Console.WriteLine("ForceSeatMI library has not been found! Please install ForceSeatPM.");
+            return;
         }
+
+        if (!mi.ActivateProfile(ProfileName))
+        {
+            Console.WriteLine($"Failed to activate the profile! Please make sure that the '{ProfileName}' profile is installed and active in ForceSeatPM.");
+            return;
+        }
+
+        Console.Write("Connecting to the MotionPlatform client... ");
+        await Task.Delay(3000);
+        //Thread.Sleep(3000);
+        Console.WriteLine("done.");
+
+        Services.DataFeeder feeder = imuDataProvider == null ?
+            new Services.DummyDataFeeder(mi, settings) :
+            new Services.IMUDataFeeder(new ForceSeatMI_NET8(), settings, imuDataProvider);
+
+        feeder.Run();
+
+        Console.Write("Parking the platform... ");
+        mi.Park(FSMI_ParkMode.Normal);
+        await Task.Delay(3000);
+        //Thread.Sleep(3000);
+        Console.WriteLine("done.");
     }
 }

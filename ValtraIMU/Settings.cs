@@ -2,6 +2,9 @@
 
 namespace ValtraIMU;
 
+/// <summary>
+/// Command-line settings for the application. Uses CommandLineParser library to parse the arguments.
+/// </summary>
 internal class Settings
 {
     [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data, or 'sim' to use data simulator")]
@@ -42,7 +45,7 @@ internal class Settings
         return _instance != null;
     }
 
-    // Internal
+    #region Internal
 
     static Settings? _instance = null;
 
@@ -59,4 +62,6 @@ internal class Settings
 
         return settings.Value ?? new Settings();
     }
+
+    #endregion
 }

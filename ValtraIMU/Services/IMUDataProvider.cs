@@ -10,12 +10,12 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
 {
     public Models.IMUData Current => _nextData ?? throw new Exception();
 
+    /// <summary>Constructor</summary>
     /// <param name="filename">data filename</param>
     /// <param name="skipRate">number of lines to skip</param>
     public IMUDataProvider(string filename, int skipRate = 0)
     {
         _stream = new StreamReader(filename);
-        _filename = filename;
         _skipRate = skipRate;
 
         // Skip comments at the beginning of the file
@@ -37,15 +37,25 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
         }
     }
 
+    /// <summary>
+    /// Create an instance of <see cref="IMUDataProvider"/> based on the settings.
+    /// If the filename is "sim", returns null, which indicates that the simulation mode is active and no data provider is needed.
+    /// If the filename is not set or the file does not exist, shows the file open dialog to select the data file.
+    /// This action replaces the filename in the settings.
+    /// </summary>
+    /// <param name="settings">Settings</param>
+    /// <returns>an instance of <see cref="IMUDataProvider"/></returns>
     public static IMUDataProvider? Create(ref Settings settings)
     {
         IMUDataProvider? result = null;
 
+        // If the filename is "sim", we are in simulation mode, and no data provider is needed.
         if (settings.Filename?.ToLower() == "sim")
         {
             return null;
         }
 
+        // If the filename is not set or the file does not exist, show the file open dialog.
         if (!File.Exists(settings.Filename))
         {
             settings.Filename = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
@@ -77,30 +87,31 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
 
     public void Reset()
     {
-        _stream.Close();
-        _stream.Dispose();
-
-        _stream = new StreamReader(_filename);
+        _stream.BaseStream.Seek(0, SeekOrigin.Begin);
     }
 
     public bool Get(long timestamp, out Models.IMUData? value)
     {
-        var result = MoveNext();
+        bool result;
+        while (result = MoveNext())
+        {
+            if (Current.Time >= timestamp)
+                break;
+        }
         value = result ? Current : null;
         return result;
     }
 
     #endregion
 
-    // Internal
+    #region Internal
 
     object IEnumerator.Current => Current;
 
-    string _filename;
-    StreamReader _stream;
-    int _skipRate;
+    readonly StreamReader _stream;
+    readonly int _skipRate;
+    readonly long _startTime;
 
-    long _startTime = 0;
     Models.IMUData? _nextData = null;
 
     private Models.IMUData? GetData(string? line = null)
@@ -176,4 +187,6 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
 
         return last;
     }
+
+    #endregion
 }
