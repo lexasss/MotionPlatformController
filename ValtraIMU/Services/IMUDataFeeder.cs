@@ -27,15 +27,26 @@ internal class IMUDataFeeder : DataFeeder
 
         var data = _dataProvider.Current;
 
-        _telemetry.bodyAngularVelocity[0].yaw = (float)data.AngularVelocity.Z;
-        _telemetry.bodyAngularVelocity[0].pitch = (float)data.AngularVelocity.X;
-        _telemetry.bodyAngularVelocity[0].roll = (float)data.AngularVelocity.Y;
+        var angVelAsRadians = data.AngularVelocity.ToRadians();
+        var orientAsRadians = data.Orientation.ToRadians();
+
+        _telemetry.bodyAngularVelocity[0].yaw = (float)angVelAsRadians.Z;
+        _telemetry.bodyAngularVelocity[0].pitch = (float)angVelAsRadians.X;
+        _telemetry.bodyAngularVelocity[0].roll = (float)angVelAsRadians.Y;
         _telemetry.bodyLinearAcceleration[0].forward = (float)data.BodyAcceleration.Y;
         _telemetry.bodyLinearAcceleration[0].upward = (float)data.BodyAcceleration.Z;
         _telemetry.bodyLinearAcceleration[0].right = (float)data.BodyAcceleration.X;
 
-        _telemetry.bodyPitch = (float)data.Orientation.Pitch;
-        _telemetry.bodyRoll = (float)data.Orientation.Roll;
+        _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
+        _telemetry.bodyRoll = (float)orientAsRadians.Roll;
+
+        if (!_settings.IsVerbose)
+        {
+            Console.CursorLeft = 0;
+            Console.Write($"AngVel: yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");
+            Console.Write($"LinAcc: f {data.BodyAcceleration.Y,8:F4}, u {data.BodyAcceleration.Z,8:F4}, r {data.BodyAcceleration.X,8:F4} | ");
+            Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
+        }
 
         _mi.SendTelemetryACE(ref _telemetry);
 
