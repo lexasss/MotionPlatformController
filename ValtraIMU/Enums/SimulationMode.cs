@@ -13,5 +13,9 @@ internal enum SimulationMode
     /// <summary>
     /// Sine wave imitating swaying up/down.
     /// </summary>
-    SwayForward
+    SwayForward,
+    /// <summary>
+    /// Sine wave imitating swaying left/right.
+    /// </summary>
+    SwayAside
 }

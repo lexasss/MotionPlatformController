@@ -20,7 +20,7 @@ internal class DummyDataFeeder : DataFeeder
             _dataProvider = new SinDataProvider(settings);
             _extraDataProvider = new SinDataProvider(settings)
             {
-                Amplitude = 2,  // rad
+                Amplitude = 0.5,  // rad
                 Frequency = 0.5
             };
         }
@@ -78,6 +78,13 @@ internal class DummyDataFeeder : DataFeeder
                 Console.WriteLine($"AngularVelocity.Pitch: {value:F4} rad/s");
 
             _telemetry.bodyAngularVelocity[0].pitch = (float)value;
+        }
+        else if (_mode == SimulationMode.SwayAside)
+        {
+            if (!_settings.IsVerbose)
+                Console.WriteLine($"AngularVelocity.Roll: {value:F4} rad/s");
+
+            _telemetry.bodyAngularVelocity[0].roll = (float)value;
         }
         else
         {
