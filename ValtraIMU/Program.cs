@@ -25,7 +25,7 @@ internal class Program
         }
 
         // Try to create IMU data provider
-        var imuDataProvider = Services.IMUDataProvider.Create(ref settings);
+        var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
         if (imuDataProvider == null)
         {
             Console.WriteLine($"Simulation mode {settings.SimulationMode}.");
@@ -35,7 +35,7 @@ internal class Program
         Task.Run(async () => await RunMotionPlatform(settings, imuDataProvider)).Wait();
     }
 
-    static async Task RunMotionPlatform(Settings settings, Services.IMUDataProvider? imuDataProvider)
+    static async Task RunMotionPlatform(Settings settings, DataProviders.IMUFile? imuDataProvider)
     {
         using var mi = new ForceSeatMI_NET8();
 
@@ -56,15 +56,15 @@ internal class Program
         //Thread.Sleep(3000);
         Console.WriteLine("done.");
 
-        Services.DataFeeder feeder = imuDataProvider == null ?
-            new Services.DummyDataFeeder(mi, settings) :
-            new Services.IMUDataFeeder(new ForceSeatMI_NET8(), settings, imuDataProvider);
+        Feeders.DataFeeder feeder = imuDataProvider == null ?
+            new Feeders.Dummy(mi, settings) :
+            new Feeders.IMU(new ForceSeatMI_NET8(), settings, imuDataProvider);
 
         feeder.Run();
 
-        Console.Write("Parking the platform... ");
-        mi.Park(FSMI_ParkMode.Normal);
-        await Task.Delay(3000);
+        //Console.Write("Parking the platform... ");
+        //mi.Park(FSMI_ParkMode.Normal);
+        //await Task.Delay(3000);
         //Thread.Sleep(3000);
         Console.WriteLine("done.");
     }

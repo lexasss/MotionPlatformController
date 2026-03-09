@@ -1,10 +1,10 @@
 # MotionPlatform controller
 
-A set of tools to stream data into MotionPlatform device using its APIs, like ForceSeatMI.
+A set of tools to stream data into MotionPlatform device using ForceSeatMI.
 
 ## ForceSeatMI project
 
-ForceSeatMI source file were used to build a .NET library taht is linked to other tools
+ForceSeatMI source files were used to build a .NET library that is linked to other tools
 
 ## ValtraIMU project
 

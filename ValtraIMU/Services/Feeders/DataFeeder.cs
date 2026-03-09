@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace ValtraIMU.Services;
+namespace ValtraIMU.Feeders;
 
 /// <summary>
 /// Base class for feeding data to MotionPlatform using ForceSeatMI.
@@ -33,7 +33,7 @@ internal abstract class DataFeeder
 
         _ = TimeBeginPeriod(1);
 
-        var printer = new DisplayPrinter();
+        var printer = new Services.DisplayPrinter();
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 

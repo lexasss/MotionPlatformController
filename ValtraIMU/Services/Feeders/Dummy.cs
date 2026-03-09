@@ -1,0 +1,98 @@
+﻿using MotionSystems;
+
+namespace ValtraIMU.Feeders;
+
+/// <summary>
+/// Implements dummy data feeding to MotionPlatform using ForceSeatMI.
+/// In SineWave mode, uses sine functions to generate angular velocity and linear acceleration data.
+/// In MoveForward mode, simulates a vehicle accelerating to a certain speed, maintaining it, and then decelerating to a stop.
+/// In SwayForward mode, simulates a vehicle swaying up/down by generating pitch angular velocity data.
+/// </summary>
+internal class Dummy : DataFeeder
+{
+    public Dummy(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
+    {
+        var mode = settings.SimulationMode;
+        _telemetry = FSMI_TelemetryACE.Prepare();
+
+        if (mode == SimulationMode.SineWaveAccel)
+        {
+            _dataProviders = [new DataProviders.Sinus(settings)];
+            _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
+        }
+        else if (mode == SimulationMode.MovePulse)
+        {
+            _dataProviders = [new DataProviders.Pulse(settings)];
+            _telemetryConfiger = new TelemetryConfigers.LinearVelocity(Settings.Interval);
+        }
+        else if (mode == SimulationMode.Sway)
+        {
+            var constProvider = new DataProviders.Const(0);
+            var sinusProvider = new DataProviders.Sinus(settings)
+            {
+                Amplitude = 0.5,  // rad
+                Frequency = 0.5
+            };
+
+            if (_settings.Axis == Axis.Right)
+                _dataProviders = [sinusProvider, constProvider];
+            else
+                _dataProviders = [constProvider, sinusProvider];
+
+            _telemetryConfiger = new TelemetryConfigers.Orientation();
+        }
+        else if (mode == SimulationMode.CircluarSway)
+        {
+            _telemetryConfiger = new TelemetryConfigers.Orientation();
+            _dataProviders = [
+                new DataProviders.Sinus(settings) { Amplitude = 0.5, Frequency = 0.5 }, 
+                new DataProviders.Sinus(settings) { Amplitude = 0.5, Frequency = 0.5, InitialPhase = Math.PI / 2 }
+            ];
+        }
+        else
+        {
+            throw new NotImplementedException($"Simulation mode '{mode}' not yet implemented.");
+        }
+    }
+
+    /// <summary>
+    /// Sends simulated telemetry data.
+    /// </summary>
+    /// <returns>true if there was data to send, false otherwise.</returns>
+    protected override bool SendData()
+    {
+        _telemetry.state = FSMI_State.NO_PAUSE;
+
+        double[] values;
+        try
+        {
+            values = _dataProviders.Select(dp =>
+            {
+                if (!dp.Get(_nextSampleTimestamp, out double value))
+                    throw new Exception($"Data provider failed to provide data for timestamp {_nextSampleTimestamp}.");
+                return value;
+            }).ToArray();
+        }
+        catch
+        {
+            return false;
+        }
+
+        _telemetryConfiger.Config(ref _telemetry, _settings, values);
+
+        _mi.SendTelemetryACE(ref _telemetry);
+
+        _nextSampleTimestamp += Settings.Interval;
+
+        return true;
+    }
+
+    #region Internal
+
+    readonly DataProviders.IDataProvider<double>[] _dataProviders;
+    readonly TelemetryConfigers.ITelemetryConfiger _telemetryConfiger;
+
+    FSMI_TelemetryACE _telemetry;
+
+    #endregion
+}

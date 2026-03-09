@@ -1,6 +1,6 @@
-﻿namespace ValtraIMU.Services;
+﻿namespace ValtraIMU.DataProviders;
 
-internal class PulseDataProvider(Settings settings) : IDataProvider<double>
+internal class Pulse(Settings settings) : IDataProvider<double>
 {
     public double Current => _nextData ?? throw new Exception();
 
@@ -11,7 +11,7 @@ internal class PulseDataProvider(Settings settings) : IDataProvider<double>
 
     public void Dispose() { }
 
-    public bool MoveNext() => Get(_timestamp += INTERVAL, out _);
+    public bool MoveNext() => Get(_timestamp += _interval, out _);
 
     public void Reset() 
     {
@@ -23,23 +23,23 @@ internal class PulseDataProvider(Settings settings) : IDataProvider<double>
     {
         double? value = null;
 
-        if (timestamp < 500)
+        if (timestamp < 500)            // 0.5 sec: initial delay before the pulse starts
         {
             value = 0;
         }
-        else if (timestamp <= 2500)
+        else if (timestamp <= 2500)     // 2 sec: ramp up
         {
             value = (Math.Sin(CYCLE_MS * Frequency * (timestamp - 500) - Math.PI / 2) + 1) / 2;
         }
-        else if (timestamp <= 5000)
+        else if (timestamp <= 5000)     // 2.5 sec: steady pulse
         {
             value = 1;
         }
-        else if (timestamp <= 7000)
+        else if (timestamp <= 7000)     // 2 sec: ramp down
         {
             value = (Math.Sin(CYCLE_MS * Frequency * (timestamp - 5000) + Math.PI / 2) + 1) / 2;
         }
-        else if (timestamp <= 7500)
+        else if (timestamp <= 10000)    // 3 sec: interval to settle down
         {
             value = 0;
         }
@@ -55,7 +55,7 @@ internal class PulseDataProvider(Settings settings) : IDataProvider<double>
     #region Internal
 
     const double CYCLE_MS = 2.0 * Math.PI / 1000.0;
-    const int INTERVAL = 4;
+    readonly int _interval = Settings.Interval;
 
     object System.Collections.IEnumerator.Current => Current;
 

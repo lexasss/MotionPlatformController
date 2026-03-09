@@ -1,4 +1,4 @@
-﻿namespace ValtraIMU.Services;
+﻿namespace ValtraIMU.DataProviders;
 
 interface IDataProvider<T> : IEnumerator<T>
 {

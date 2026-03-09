@@ -10,8 +10,8 @@ internal class Settings
     [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data, or 'sim' to use data simulator")]
     public string? Filename { get; set; }
 
-    [Option('m', "mode", Required = false, Default = SimulationMode.SineWave, HelpText = "Simulation mode")]
-    public SimulationMode SimulationMode { get; set; } = SimulationMode.SineWave;
+    [Option('m', "mode", Required = false, Default = SimulationMode.SineWaveAccel, HelpText = "Simulation mode")]
+    public SimulationMode SimulationMode { get; set; } = SimulationMode.SineWaveAccel;
 
     [Option('s', "skip", Required = false, Default = 0, HelpText = "Skip rate for IMU data")]
     public int SkipRate { get; set; } = 0;
@@ -22,11 +22,16 @@ internal class Settings
     [Option('f', "frequency", Required = false, Default = 0.5, HelpText = "Signal frequency in simulation mode")]
     public double Frequency { get; set; } = 0.5;
 
+    [Option('x', "axis", Required = false, Default = 0, HelpText = "Axis used in simulation mode")]
+    public Axis Axis { get; set; } = Axis.Forward;
+
     [Option('v', "verbose", Required = false, HelpText = "Debug info is printed in the verbose mode.")]
     public bool IsVerbose { get; set; } = false;
 
     [Option('d', "debug", Required = false, HelpText = "Sets to the debug mode.")]
     public bool IsDebugMode { get; set; } = false;
+
+    public static int Interval => 4;   // ms, corresponds to 250 Hz
 
     public static bool TryGetInstance(out Settings settings, out string? error)
     {

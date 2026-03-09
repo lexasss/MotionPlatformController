@@ -1,19 +1,19 @@
 ﻿using SharpDialogs;
 using System.Collections;
 
-namespace ValtraIMU.Services;
+namespace ValtraIMU.DataProviders;
 
 /// <summary>
 /// Reads data from IMU+GNSS data log file
 /// </summary>
-internal class IMUDataProvider : IDataProvider<Models.IMUData>
+internal class IMUFile : IDataProvider<Models.IMUData>
 {
     public Models.IMUData Current => _nextData ?? throw new Exception();
 
     /// <summary>Constructor</summary>
     /// <param name="filename">data filename</param>
     /// <param name="skipRate">number of lines to skip</param>
-    public IMUDataProvider(string filename, int skipRate = 0)
+    public IMUFile(string filename, int skipRate = 0)
     {
         _stream = new StreamReader(filename);
         _skipRate = skipRate;
@@ -38,16 +38,16 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
     }
 
     /// <summary>
-    /// Create an instance of <see cref="IMUDataProvider"/> based on the settings.
+    /// Create an instance of <see cref="IMUFile"/> based on the settings.
     /// If the filename is "sim", returns null, which indicates that the simulation mode is active and no data provider is needed.
     /// If the filename is not set or the file does not exist, shows the file open dialog to select the data file.
     /// This action replaces the filename in the settings.
     /// </summary>
     /// <param name="settings">Settings</param>
-    /// <returns>an instance of <see cref="IMUDataProvider"/></returns>
-    public static IMUDataProvider? Create(ref Settings settings)
+    /// <returns>an instance of <see cref="IMUFile"/></returns>
+    public static IMUFile? Create(ref Settings settings)
     {
-        IMUDataProvider? result = null;
+        IMUFile? result = null;
 
         // If the filename is "sim", we are in simulation mode, and no data provider is needed.
         if (settings.Filename?.ToLower() == "sim")
@@ -64,7 +64,7 @@ internal class IMUDataProvider : IDataProvider<Models.IMUData>
         if (File.Exists(settings.Filename))
         {
             Console.Write($"Loading data from {settings.Filename}...  ");
-            result = new IMUDataProvider(settings.Filename, settings.SkipRate);
+            result = new IMUFile(settings.Filename, settings.SkipRate);
             Console.WriteLine("done.");
         }
 

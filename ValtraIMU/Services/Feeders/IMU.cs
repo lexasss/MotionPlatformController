@@ -1,14 +1,14 @@
 ﻿using MotionSystems;
 
-namespace ValtraIMU.Services;
+namespace ValtraIMU.Feeders;
 
 /// <summary>
 /// Implements data feeding to MotionPlatform using ForceSeatMI.
-/// The IMU+GNSS data can be obtained using <see cref="IMUDataProvider">IMUDataProvider</see>.
+/// The IMU+GNSS data can be obtained using <see cref="DataProviders.IMUFile">IMUDataProvider</see>.
 /// </summary>
-internal class IMUDataFeeder : DataFeeder
+internal class IMU : DataFeeder
 {
-    public IMUDataFeeder(ForceSeatMI_NET8 mi, Settings settings, IMUDataProvider dataProvider) : base(mi, settings)
+    public IMU(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFile dataProvider) : base(mi, settings)
     {
         _dataProvider = dataProvider;
         _telemetry = FSMI_TelemetryACE.Prepare();
@@ -40,7 +40,7 @@ internal class IMUDataFeeder : DataFeeder
         _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
         _telemetry.bodyRoll = (float)orientAsRadians.Roll;
 
-        if (!_settings.IsVerbose)
+        if (!_settings.IsVerbose && _nextSampleTimestamp % 100 == 0)
         {
             Console.CursorLeft = 0;
             Console.Write($"AngVel: yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");
@@ -57,7 +57,7 @@ internal class IMUDataFeeder : DataFeeder
 
     #region Internal
 
-    readonly IMUDataProvider _dataProvider;
+    readonly DataProviders.IMUFile _dataProvider;
 
     FSMI_TelemetryACE _telemetry;
 
