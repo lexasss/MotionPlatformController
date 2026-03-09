@@ -1,10 +1,21 @@
 ﻿namespace ValtraIMU.DataProviders;
 
+/// <summary>
+/// Creates a clear pulse pattern of ramp up, steady pulse, and ramp down within 10 seconds
+/// </summary>
+/// <param name="settings">settings object</param>
 internal class Pulse(Settings settings) : IDataProvider<double>
 {
+    /// <summary>
+    /// IDataProvider implementation
+    /// </summary>
     public double Current => _nextData ?? throw new Exception();
 
     public double Amplitude { get; set; } = settings.Amplitude;
+    
+    /// <summary>
+    /// Frequency is fixed to 0.25 Hz.
+    /// </summary>
     public double Frequency { get; set; } = 1.0 / 4;
 
     #region IDataProvider implementation

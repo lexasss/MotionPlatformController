@@ -1,7 +1,15 @@
 ﻿namespace ValtraIMU.DataProviders;
 
+/// <summary>
+/// Creates a sinusoidal pattern of data with given amplitude, frequency and phase.
+/// </summary>
+/// <param name="settings">settings object</param>
+/// <param name="initialPhase">sine initial phase</param>
 internal class Sinus(Settings settings, double initialPhase = 0) : IDataProvider<double>
 {
+    /// <summary>
+    /// IDataProvider implementation
+    /// </summary>
     public double Current => _nextData ?? throw new Exception();
 
     public double Amplitude { get; set; } = settings.Amplitude;

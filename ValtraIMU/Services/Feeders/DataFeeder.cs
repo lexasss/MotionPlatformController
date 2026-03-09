@@ -9,13 +9,10 @@ namespace ValtraIMU.Feeders;
 /// It handles the main loop and timing, while descendants implement <see cref="SendData">SendData</see> to send data 
 /// and set <see cref="_nextSampleTimestamp">_nextSampleTimestamp</see>.
 /// </summary>
-internal abstract class DataFeeder
+/// <param name="mi">ForceSeatMI object</param>
+/// <param name="settings">settings object</param>
+internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 {
-    public DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
-    {
-        _mi = mi;
-        _settings = settings;
-    }
 
     /// <summary>
     /// Starts and manages the main simulation loop: the MP control, periodic data transmission,
@@ -73,9 +70,9 @@ internal abstract class DataFeeder
 
     #region Shared with descendants
 
-    protected readonly Settings _settings;
+    protected readonly Settings _settings = settings;
 
-    protected ForceSeatMI_NET8 _mi;
+    protected ForceSeatMI_NET8 _mi = mi;
     protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.
 
     /// <summary>
