@@ -40,7 +40,7 @@ internal class IMU : DataFeeder
         _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
         _telemetry.bodyRoll = (float)orientAsRadians.Roll;
 
-        if (!_settings.IsVerbose && _nextSampleTimestamp % 100 == 0)
+        if (_settings.IsVerbose && !_settings.IsDebugMode && _nextSampleTimestamp % 100 == 0)
         {
             Console.CursorLeft = 0;
             Console.Write($"AngVel: yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");

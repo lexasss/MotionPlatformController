@@ -8,7 +8,7 @@ internal class LinearAcceleration : ITelemetryConfiger
     {
         var value = values[0];
 
-        if (!settings.IsVerbose)
+        if (settings.IsVerbose && !settings.IsDebugMode)
             Console.WriteLine($"LinearAcceleleration.{settings.Axis}: {value:F4} m/s²");
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];

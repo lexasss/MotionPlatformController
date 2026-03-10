@@ -49,7 +49,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
             if (!SendData())
                 break;
 
-            if (_settings.IsVerbose && !printer.PrintStatus(_mi))
+            if (_settings.IsDebugMode && !printer.PrintStatus(_mi))
                 break;
 
             while (stopWatch.ElapsedMilliseconds < _nextSampleTimestamp)
