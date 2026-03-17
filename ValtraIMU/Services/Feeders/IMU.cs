@@ -30,12 +30,12 @@ internal class IMU : DataFeeder
         var angVelAsRadians = data.AngularVelocity.ToRadians();
         var orientAsRadians = data.Orientation.ToRadians();
 
-        _telemetry.bodyAngularVelocity[0].yaw = (float)angVelAsRadians.Z;
-        _telemetry.bodyAngularVelocity[0].pitch = (float)angVelAsRadians.X;
-        _telemetry.bodyAngularVelocity[0].roll = (float)angVelAsRadians.Y;
-        _telemetry.bodyLinearAcceleration[0].forward = (float)data.BodyAcceleration.Y;
-        _telemetry.bodyLinearAcceleration[0].upward = (float)data.BodyAcceleration.Z;
-        _telemetry.bodyLinearAcceleration[0].right = (float)data.BodyAcceleration.X;
+        _telemetry.bodyAngularVelocity[0].yaw = (float)(angVelAsRadians.Z * _settings.Amplitude);
+        _telemetry.bodyAngularVelocity[0].pitch = (float)(angVelAsRadians.X * _settings.Amplitude);
+        _telemetry.bodyAngularVelocity[0].roll = (float)(angVelAsRadians.Y * _settings.Amplitude);
+        _telemetry.bodyLinearAcceleration[0].forward = (float)(data.BodyAcceleration.Y * _settings.Amplitude);
+        _telemetry.bodyLinearAcceleration[0].upward = (float)(data.BodyAcceleration.Z * _settings.Amplitude);
+        _telemetry.bodyLinearAcceleration[0].right = (float)(data.BodyAcceleration.X * _settings.Amplitude);
 
         _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
         _telemetry.bodyRoll = (float)orientAsRadians.Roll;

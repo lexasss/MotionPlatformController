@@ -53,19 +53,18 @@ internal class Program
 
         Console.Write("Connecting to the MotionPlatform client... ");
         await Task.Delay(3000);
-        //Thread.Sleep(3000);
         Console.WriteLine("done.");
 
         Feeders.DataFeeder feeder = imuDataProvider == null ?
             new Feeders.Dummy(mi, settings) :
-            new Feeders.IMU(new ForceSeatMI_NET8(), settings, imuDataProvider);
+            new Feeders.IMU(mi, settings, imuDataProvider);
 
         feeder.Run();
 
         //Console.Write("Parking the platform... ");
         //mi.Park(FSMI_ParkMode.Normal);
         //await Task.Delay(3000);
-        //Thread.Sleep(3000);
+
         Console.WriteLine("done.");
     }
 }
