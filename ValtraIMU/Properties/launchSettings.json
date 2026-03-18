@@ -2,7 +2,7 @@
   "profiles": {
     "ValtraIMU": {
       "commandName": "Project",
-      "commandLineArgs": "-a5"
+      "commandLineArgs": "--help"
     }
   }
 }

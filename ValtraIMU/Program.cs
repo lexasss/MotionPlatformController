@@ -1,28 +1,31 @@
 ﻿using MotionSystems;
+using Spectre.Console.Cli;
 using System.Globalization;
+using System.Reflection;
 
 namespace ValtraIMU;
 
 /// <summary>
-/// The app, either stream Valtra IMU+GNSS data to ForceSeatPM or simulate it with dummy data, depending on the settings.
+/// The app, either streams Valtra IMU+GNSS data to ForceSeatPM or simulates it with dummy data, depending on the settings.
 /// </summary>
-internal class Program
+internal class Program : Command<SettingsCLI>
 {
     static string ProfileName => "SDK - Vehicle Telemetry ACE";
 
-    static void Main()
+    static int Main(string[] args)
     {
-        // Set the US-culture across the application to avoid decimal point parsing issues
-        var culture = CultureInfo.GetCultureInfo("en-US");
-        CultureInfo.DefaultThreadCurrentCulture = culture;
-        Thread.CurrentThread.CurrentCulture = culture;
-
-        // Get settings
-        if (!Settings.TryGetInstance(out Settings settings, out string? error))
+        var app = new CommandApp<Program>();
+        app.Configure(config =>
         {
-            Console.WriteLine(error);
-            return;
-        }
+            config.SetApplicationCulture(CultureInfo.GetCultureInfo("en-US"));
+            config.SetApplicationName($"{Assembly.GetExecutingAssembly().FullName?.Split(',')[0]}.exe");
+        });
+        return app.Run(args);
+    }
+
+    public override int Execute(CommandContext context, SettingsCLI settingsCli, CancellationToken cts)
+    {
+        Settings settings = settingsCli.Resolve();
 
         // Try to create IMU data provider
         var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
@@ -32,7 +35,9 @@ internal class Program
         }
 
         // Run the feeder
-        Task.Run(async () => await RunMotionPlatform(settings, imuDataProvider)).Wait();
+        Task.Run(async () => await RunMotionPlatform(settings, imuDataProvider), cts).Wait(cts);
+
+        return 0;
     }
 
     static async Task RunMotionPlatform(Settings settings, DataProviders.IMUFile? imuDataProvider)

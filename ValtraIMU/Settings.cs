@@ -1,72 +1,91 @@
-﻿using CommandLine;
+﻿using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
 
 namespace ValtraIMU;
 
 /// <summary>
-/// Command-line settings for the application. Uses CommandLineParser library to parse the arguments.
+/// Command-line settings for the application. Do not use the class instance directly,
+/// rather obtain the <see cref="Settings"/> class instance using <see cref="Resolve"/> method.
 /// </summary>
-internal class Settings
+internal class SettingsCLI : CommandSettings
 {
-    [Value(0, Required = false, HelpText = "Valtra IMU+GNSS data, or 'sim' to use data simulator")]
+    [Description("Valtra IMU+GNSS data, or 'sim' to use data simulator")]
+    [CommandArgument(0, "[filename]")]
     public string? Filename { get; set; }
 
-    [Option('m', "mode", Required = false, Default = SimulationMode.SineWaveAccel, HelpText = "Simulation mode")]
+    [CommandOption("-m|--mode")]
+    [Description("Simulation mode")]
+    public SimulationMode? SimulationMode { get; set; }
+
+    [CommandOption("-a|--amplitude")]
+    [Description("Signal amplitude in simulation mode")]
+    public double? Amplitude { get; set; }
+
+    [CommandOption("-x|--axis")]
+    [Description("Axis used in simulation mode")]
+    public Axis? Axis { get; set; }
+
+    [CommandOption("-f|--frequency")]
+    [Description("Signal frequency in simulation mode")]
+    public double? Frequency { get; set; }
+
+    [CommandOption("-s|--skip")]
+    [Description("Skip rate for IMU data")]
+    public int? SkipRate { get; set; }
+
+    [CommandOption("-v|--verbose")]
+    [Description("Debug info is printed in the verbose mode.")]
+    public bool? IsVerbose { get; set; }
+
+    [CommandOption("-d|--debug")]
+    [Description("Sets to the debug mode.")]
+    public bool? IsDebugMode { get; set; }
+
+    public Settings Resolve()
+    {
+        var result = new Settings();
+
+        result.Filename = Filename ?? (AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select IMU data source:")
+                    .AddChoices(new[]
+                    {
+                        "Recorded filename",
+                        "Simulated data"
+                    })).StartsWith("Sim") ? "sim" : null);
+        if (result.Filename == "sim")
+        {
+            result.SimulationMode = SimulationMode ?? AnsiConsole.Prompt(
+                new SelectionPrompt<SimulationMode>()
+                    .Title("Select simulation mode:")
+                    .AddChoices(Enum.GetValues<SimulationMode>()));
+            result.Axis = Axis ?? AnsiConsole.Prompt(
+                new SelectionPrompt<Axis>()
+                    .Title("Select axis used in simulation mode:")
+                    .AddChoices(Enum.GetValues<Axis>()));
+        }
+
+        result.Amplitude = Amplitude ?? result.Amplitude;
+        result.Frequency = Frequency ?? result.Frequency;
+        result.SkipRate = SkipRate ?? result.SkipRate;
+        result.IsVerbose = IsVerbose ?? result.IsVerbose;
+        result.IsDebugMode = IsDebugMode ?? result.IsDebugMode;
+
+        return result;
+    }
+}
+
+internal class Settings
+{
+    public string? Filename { get; set; }
     public SimulationMode SimulationMode { get; set; } = SimulationMode.SineWaveAccel;
-
-    [Option('s', "skip", Required = false, Default = 0, HelpText = "Skip rate for IMU data")]
-    public int SkipRate { get; set; } = 0;
-
-    [Option('a', "amplitude", Required = false, Default = 1, HelpText = "Signal amplitude in simulation mode")]
-    public double Amplitude { get; set; } = 1;
-
-    [Option('f', "frequency", Required = false, Default = 0.5, HelpText = "Signal frequency in simulation mode")]
-    public double Frequency { get; set; } = 0.5;
-
-    [Option('x', "axis", Required = false, Default = 0, HelpText = "Axis used in simulation mode")]
     public Axis Axis { get; set; } = Axis.Forward;
-
-    [Option('v', "verbose", Required = false, HelpText = "Debug info is printed in the verbose mode.")]
+    public double Amplitude { get; set; } = 1;
+    public double Frequency { get; set; } = 0.5;
+    public int SkipRate { get; set; } = 0;
     public bool IsVerbose { get; set; } = false;
-
-    [Option('d', "debug", Required = false, HelpText = "Sets to the debug mode.")]
     public bool IsDebugMode { get; set; } = false;
 
     public static int Interval => 4;   // ms, corresponds to 250 Hz
-
-    public static bool TryGetInstance(out Settings settings, out string? error)
-    {
-        error = null;
-
-        try
-        {
-            _instance ??= Create();
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-
-        settings = _instance ?? new Settings();
-        return _instance != null;
-    }
-
-    #region Internal
-
-    static Settings? _instance = null;
-
-    private static Settings Create()
-    {
-        var args = Environment.GetCommandLineArgs()[1..];
-        var settings = Parser.Default.ParseArguments<Settings>(args);
-
-        bool missesRequiredSettings = false;
-        settings.WithNotParsed(errors => missesRequiredSettings = missesRequiredSettings || errors.Any(error => error is MissingRequiredOptionError));
-
-        if (missesRequiredSettings)
-            throw new Exception("Missing required options");
-
-        return settings.Value ?? new Settings();
-    }
-
-    #endregion
 }
