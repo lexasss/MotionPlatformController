@@ -31,7 +31,7 @@ internal class Program : Command<Settings>
         var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
         if (imuDataProvider == null)
         {
-            Console.WriteLine($"Simulation mode {settings.SimulationMode}.");
+            Console.WriteLine($"Simulation mode {settings.SimulationMode.Value}.");
         }
 
         // Run the feeder

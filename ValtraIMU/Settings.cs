@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using SharpDialogs;
+using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
@@ -10,7 +11,7 @@ namespace ValtraIMU;
 /// </summary>
 internal class Settings : CommandSettings
 {
-    [Description("Valtra IMU+GNSS data file, or 'sim' to use data simulator")]
+    [Description($"Valtra IMU+GNSS data file, or '{SIM_LABEL}' to use data simulator")]
     [CommandArgument(0, "[filename]")]
     public FlagValue<string?> Filename { get; set; } = new FlagValue<string?>();
 
@@ -55,20 +56,32 @@ internal class Settings : CommandSettings
                 new SelectionPrompt<string>()
                     .Title("Select IMU data source:")
                     .AddChoices([
-                        "Recorded filename",
-                        "Simulated data"
+                        "1. Recorded file",
+                        "2. Simulated data"
                     ])
-                ).StartsWith("Sim") ? "sim" : null);
-        if (Filename.Value == "sim")
+                ).StartsWith("2") ? SIM_LABEL : null);
+
+        if (Filename.Value == SIM_LABEL)
         {
             SimulationMode.Value = SimulationMode.IsSet ? SimulationMode.Value : AnsiConsole.Prompt(
                 new SelectionPrompt<SimulationMode>()
                     .Title("Select simulation mode:")
                     .AddChoices(Enum.GetValues<SimulationMode>()));
-            Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
-                new SelectionPrompt<Axis>()
-                    .Title("Select axis used in simulation mode:")
-                    .AddChoices(Enum.GetValues<Axis>()));
+
+            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.MovePulse)
+            {
+                Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
+                    new SelectionPrompt<Axis>()
+                        .Title("Select axis used in simulation mode:")
+                        .AddChoices(Enum.GetValues<Axis>()));
+            }
+        }
+        else if (!File.Exists(Filename.Value))
+        {
+            Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
         }
     }
+
+    const string SIM_LABEL = "sim";
 }
