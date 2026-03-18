@@ -48,23 +48,24 @@ internal class IMUFile : IDataProvider<Models.IMUData>
     public static IMUFile? Create(ref Settings settings)
     {
         IMUFile? result = null;
+        var filename = settings.Filename.Value ?? "";
 
         // If the filename is "sim", we are in simulation mode, and no data provider is needed.
-        if (settings.Filename?.ToLower() == "sim")
+        if (filename.ToLower() == "sim")
         {
             return null;
         }
 
         // If the filename is not set or the file does not exist, show the file open dialog.
-        if (!File.Exists(settings.Filename))
+        if (!File.Exists(filename))
         {
-            settings.Filename = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+            settings.Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
         }
 
-        if (File.Exists(settings.Filename))
+        if (File.Exists(filename))
         {
             Console.Write($"Loading data from {settings.Filename}...  ");
-            result = new IMUFile(settings.Filename, settings.SkipRate);
+            result = new IMUFile(filename, settings.SkipRate);
             Console.WriteLine("done.");
         }
 

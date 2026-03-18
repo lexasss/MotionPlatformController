@@ -14,7 +14,7 @@ internal class LinearVelocity(int interval) : ITelemetryConfiger
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];
         ref FSMI_TelemetryRUF linVelocity = ref telemetry.bodyLinearVelocity[0];
-        switch (settings.Axis)
+        switch (settings.Axis.Value)
         {
             case Axis.Right:
                 linAccel.right = (float)acceleration;

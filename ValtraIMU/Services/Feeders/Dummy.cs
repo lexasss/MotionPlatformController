@@ -12,7 +12,7 @@ internal class Dummy : DataFeeder
 {
     public Dummy(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
     {
-        var mode = settings.SimulationMode;
+        var mode = settings.SimulationMode.Value;
         _telemetry = FSMI_TelemetryACE.Prepare();
 
         if (mode == SimulationMode.SineWaveAccel)
@@ -34,7 +34,7 @@ internal class Dummy : DataFeeder
                 Frequency = 0.5
             };
 
-            if (_settings.Axis == Axis.Right)
+            if (_settings.Axis.Value == Axis.Right)
                 _dataProviders = [sinusProvider, constProvider];
             else
                 _dataProviders = [constProvider, sinusProvider];

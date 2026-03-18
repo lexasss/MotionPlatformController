@@ -12,7 +12,7 @@ internal class LinearAcceleration : ITelemetryConfiger
             Console.WriteLine($"LinearAcceleleration.{settings.Axis}: {value:F4} m/s²");
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];
-        switch (settings.Axis)
+        switch (settings.Axis.Value)
         {
             case Axis.Right:
                 linAccel.right = (float)value;

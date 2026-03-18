@@ -5,87 +5,70 @@ using System.ComponentModel;
 namespace ValtraIMU;
 
 /// <summary>
-/// Command-line settings for the application. Do not use the class instance directly,
-/// rather obtain the <see cref="Settings"/> class instance using <see cref="Resolve"/> method.
+/// Command-line settings for the application. 
+/// Always run <see cref="Resolve"/> method before using its values.
 /// </summary>
-internal class SettingsCLI : CommandSettings
+internal class Settings : CommandSettings
 {
-    [Description("Valtra IMU+GNSS data, or 'sim' to use data simulator")]
+    [Description("Valtra IMU+GNSS data file, or 'sim' to use data simulator")]
     [CommandArgument(0, "[filename]")]
-    public string? Filename { get; set; }
+    public FlagValue<string?> Filename { get; set; } = new FlagValue<string?>();
 
-    [CommandOption("-m|--mode")]
+    [CommandOption("-m|--mode <MODE>")]
     [Description("Simulation mode")]
-    public SimulationMode? SimulationMode { get; set; }
+    public FlagValue<SimulationMode> SimulationMode { get; set; } = new FlagValue<SimulationMode>();
 
-    [CommandOption("-a|--amplitude")]
-    [Description("Signal amplitude in simulation mode")]
-    public double? Amplitude { get; set; }
-
-    [CommandOption("-x|--axis")]
+    [CommandOption("-x|--axis <AXIS>")]
     [Description("Axis used in simulation mode")]
-    public Axis? Axis { get; set; }
+    public FlagValue<Axis> Axis { get; set; } = new FlagValue<Axis>();
 
-    [CommandOption("-f|--frequency")]
+    [CommandOption("-a|--amplitude <NUMBER>")]
+    [Description("Signal amplitude in simulation mode")]
+    [DefaultValue(1.0)]
+    public double Amplitude { get; set; }
+
+    [CommandOption("-f|--frequency <NUMBER>")]
     [Description("Signal frequency in simulation mode")]
-    public double? Frequency { get; set; }
+    [DefaultValue(0.5)]
+    public double Frequency { get; set; }
 
-    [CommandOption("-s|--skip")]
+    [CommandOption("-s|--skip <NUMBER>")]
     [Description("Skip rate for IMU data")]
-    public int? SkipRate { get; set; }
+    [DefaultValue(1)]
+    public int SkipRate { get; set; }
 
     [CommandOption("-v|--verbose")]
     [Description("Debug info is printed in the verbose mode.")]
-    public bool? IsVerbose { get; set; }
+    [DefaultValue(false)]
+    public bool IsVerbose { get; set; }
 
     [CommandOption("-d|--debug")]
     [Description("Sets to the debug mode.")]
-    public bool? IsDebugMode { get; set; }
+    [DefaultValue(false)]
+    public bool IsDebugMode { get; set; }
 
-    public Settings Resolve()
+    public static int Interval => 4;   // ms, corresponds to 250 Hz
+
+    public void Resolve()
     {
-        var result = new Settings();
-
-        result.Filename = Filename ?? (AnsiConsole.Prompt(
+        Filename.Value = Filename.IsSet ? Filename.Value : (AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("Select IMU data source:")
-                    .AddChoices(new[]
-                    {
+                    .AddChoices([
                         "Recorded filename",
                         "Simulated data"
-                    })).StartsWith("Sim") ? "sim" : null);
-        if (result.Filename == "sim")
+                    ])
+                ).StartsWith("Sim") ? "sim" : null);
+        if (Filename.Value == "sim")
         {
-            result.SimulationMode = SimulationMode ?? AnsiConsole.Prompt(
+            SimulationMode.Value = SimulationMode.IsSet ? SimulationMode.Value : AnsiConsole.Prompt(
                 new SelectionPrompt<SimulationMode>()
                     .Title("Select simulation mode:")
                     .AddChoices(Enum.GetValues<SimulationMode>()));
-            result.Axis = Axis ?? AnsiConsole.Prompt(
+            Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
                 new SelectionPrompt<Axis>()
                     .Title("Select axis used in simulation mode:")
                     .AddChoices(Enum.GetValues<Axis>()));
         }
-
-        result.Amplitude = Amplitude ?? result.Amplitude;
-        result.Frequency = Frequency ?? result.Frequency;
-        result.SkipRate = SkipRate ?? result.SkipRate;
-        result.IsVerbose = IsVerbose ?? result.IsVerbose;
-        result.IsDebugMode = IsDebugMode ?? result.IsDebugMode;
-
-        return result;
     }
-}
-
-internal class Settings
-{
-    public string? Filename { get; set; }
-    public SimulationMode SimulationMode { get; set; } = SimulationMode.SineWaveAccel;
-    public Axis Axis { get; set; } = Axis.Forward;
-    public double Amplitude { get; set; } = 1;
-    public double Frequency { get; set; } = 0.5;
-    public int SkipRate { get; set; } = 0;
-    public bool IsVerbose { get; set; } = false;
-    public bool IsDebugMode { get; set; } = false;
-
-    public static int Interval => 4;   // ms, corresponds to 250 Hz
 }

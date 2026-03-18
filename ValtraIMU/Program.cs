@@ -8,7 +8,7 @@ namespace ValtraIMU;
 /// <summary>
 /// The app, either streams Valtra IMU+GNSS data to ForceSeatPM or simulates it with dummy data, depending on the settings.
 /// </summary>
-internal class Program : Command<SettingsCLI>
+internal class Program : Command<Settings>
 {
     static string ProfileName => "SDK - Vehicle Telemetry ACE";
 
@@ -23,9 +23,9 @@ internal class Program : Command<SettingsCLI>
         return app.Run(args);
     }
 
-    public override int Execute(CommandContext context, SettingsCLI settingsCli, CancellationToken cts)
+    public override int Execute(CommandContext context, Settings settings, CancellationToken cts)
     {
-        Settings settings = settingsCli.Resolve();
+        settings.Resolve();
 
         // Try to create IMU data provider
         var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
