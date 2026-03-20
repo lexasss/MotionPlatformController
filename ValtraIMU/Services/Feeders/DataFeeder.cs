@@ -1,6 +1,7 @@
 ﻿using MotionSystems;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using ValtraIMU.Services;
 
 namespace ValtraIMU.Feeders;
 
@@ -71,6 +72,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     #region Shared with descendants
 
     protected readonly Settings _settings = settings;
+
+    protected readonly TelemetryBroadcaster _telemetryBroadcaster = new();
 
     protected ForceSeatMI_NET8 _mi = mi;
     protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.

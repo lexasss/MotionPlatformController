@@ -48,6 +48,8 @@ internal class IMU : DataFeeder
             Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
         }
 
+        _telemetryBroadcaster.Send(ref _telemetry);
+
         _mi.SendTelemetryACE(ref _telemetry);
 
         _nextSampleTimestamp = data.Time;

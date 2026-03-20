@@ -80,6 +80,8 @@ internal class Dummy : DataFeeder
 
         _telemetryConfiger.Config(ref _telemetry, _settings, values);
 
+        _telemetryBroadcaster.Send(ref _telemetry);
+
         _mi.SendTelemetryACE(ref _telemetry);
 
         _nextSampleTimestamp += Settings.Interval;
