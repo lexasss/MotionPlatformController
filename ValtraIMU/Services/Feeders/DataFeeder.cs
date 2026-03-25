@@ -1,7 +1,6 @@
 ﻿using MotionSystems;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using ValtraIMU.Services;
 
 namespace ValtraIMU.Feeders;
 
@@ -32,36 +31,41 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         _ = TimeBeginPeriod(1);
 
         var printer = new Services.DisplayPrinter();
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
 
+        _stopwatch.Start();
         _nextSampleTimestamp = 0;
 
-        Console.WriteLine("Press 'q' to exit");
+        Console.WriteLine("Press:");
+        Console.WriteLine(" - ESC or 'q' to exit");
+        Console.WriteLine(" - SPACE to pause/continue");
+        Console.WriteLine("\nRunning . . .");
 
         while (true)
         {
-            if (Console.KeyAvailable && Console.ReadKey().KeyChar == 'q')
+            if (HandleKeyPress() == KeyHandlerResult.Exiting)
             {
-                Console.CursorLeft--;
                 break;
             }
 
-            if (!SendData())
-                break;
+            if (!_isPaused)
+            {
+                if (!SendData())
+                    break;
 
-            if (_settings.IsDebugMode && !printer.PrintStatus(_mi))
-                break;
+                if (_settings.IsDebugMode && !printer.PrintStatus(_mi))
+                    break;
+            }
 
-            while (stopWatch.ElapsedMilliseconds < _nextSampleTimestamp)
+            while (_stopwatch.ElapsedMilliseconds < _nextSampleTimestamp)
             {
                 Thread.Sleep(1);
             }
         }
 
-        stopWatch.Stop();
+        _stopwatch.Stop();
 
-        Console.WriteLine();
+        if (Console.CursorLeft > 0)
+            Console.WriteLine();
         Console.WriteLine("Stopped.");
 
         _mi.EndMotionControl();
@@ -73,7 +77,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 
     protected readonly Settings _settings = settings;
 
-    protected readonly TelemetryBroadcaster _telemetryBroadcaster = new();
+    protected readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
     protected ForceSeatMI_NET8 _mi = mi;
     protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.
@@ -87,6 +91,50 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     #endregion
 
     #region Internal
+
+    readonly Stopwatch _stopwatch = new();
+
+    bool _isPaused = false;
+
+    enum KeyHandlerResult
+    {
+        None,
+        Handled,
+        Exiting
+    }
+
+    private KeyHandlerResult HandleKeyPress()
+    {
+        if (Console.KeyAvailable)
+        {
+            var key = Console.ReadKey(true);
+            if (key.Key == ConsoleKey.Escape || key.KeyChar == 'q')
+            {
+                return KeyHandlerResult.Exiting;
+            }
+            else if (key.KeyChar == ' ')
+            {
+                _isPaused = !_isPaused;
+                if (_isPaused)
+                {
+                    _stopwatch.Stop();
+                    if (Console.CursorLeft > 0)
+                        Console.WriteLine();
+                    Console.WriteLine("Paused, press SPACE to continue");
+                }
+                else
+                {
+                    _stopwatch.Start();
+                    if (Console.CursorLeft > 0)
+                        Console.WriteLine();
+                    Console.WriteLine("Running . . .");
+                }
+                return KeyHandlerResult.Handled;
+            }
+        }
+
+        return KeyHandlerResult.None;
+    }
 
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
     private static extern uint TimeBeginPeriod(uint uMilliseconds);

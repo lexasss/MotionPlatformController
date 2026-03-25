@@ -23,6 +23,13 @@ internal class Program : Command<Settings>
         return app.Run(args);
     }
 
+    /// <summary>
+    /// Called internally by <see cref="Command"/> base class
+    /// </summary>
+    /// <param name="context">Base class context</param>
+    /// <param name="settings">Parsed command line settings</param>
+    /// <param name="cts">Cancellation token</param>
+    /// <returns></returns>
     public override int Execute(CommandContext context, Settings settings, CancellationToken cts)
     {
         settings.Resolve();

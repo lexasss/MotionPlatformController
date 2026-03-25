@@ -10,7 +10,10 @@ internal class LinearVelocity(int interval) : ITelemetryConfiger
         var acceleration = (value - _speed) / _interval;
 
         if (settings.IsVerbose && !settings.IsDebugMode)
-            Console.WriteLine($"LinearVelocity.{settings.Axis.Value}: {value:F4} m/s, LinearAcceleration.{settings.Axis.Value}: {acceleration:F4} m/s²");
+        {
+            Console.CursorLeft = 0;
+            Console.Write($"LinearVelocity.{settings.Axis.Value}: {value:F4} m/s, LinearAcceleration.{settings.Axis.Value}: {acceleration:F4} m/s²");
+        }
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];
         ref FSMI_TelemetryRUF linVelocity = ref telemetry.bodyLinearVelocity[0];

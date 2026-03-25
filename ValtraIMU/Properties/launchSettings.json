@@ -2,7 +2,7 @@
   "profiles": {
     "ValtraIMU": {
       "commandName": "Project",
-      "commandLineArgs": "-a 15"
+      "commandLineArgs": "-a 3 -v"
     }
   }
 }

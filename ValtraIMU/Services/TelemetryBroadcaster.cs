@@ -40,6 +40,4 @@ internal class TelemetryBroadcaster
 
     readonly UdpClient _client;
     readonly IPEndPoint _endPoint;
-
-    const int VALUE_SIZE = sizeof(float);
 }
