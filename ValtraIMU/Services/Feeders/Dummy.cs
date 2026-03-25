@@ -30,7 +30,7 @@ internal class Dummy : DataFeeder
             var constProvider = new DataProviders.Const(0);
             var sinusProvider = new DataProviders.Sinus(settings)
             {
-                Amplitude = 0.5,  // rad
+                Amplitude = settings.Amplitude,  // rad
                 Frequency = 0.5
             };
 
@@ -45,8 +45,21 @@ internal class Dummy : DataFeeder
         {
             _telemetryConfiger = new TelemetryConfigers.Orientation();
             _dataProviders = [
-                new DataProviders.Sinus(settings) { Amplitude = 0.5, Frequency = 0.5 }, 
-                new DataProviders.Sinus(settings) { Amplitude = 0.5, Frequency = 0.5, InitialPhase = Math.PI / 2 }
+                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 }, 
+                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5, InitialPhase = Math.PI / 2 }
+            ];
+        }
+        else if (mode == SimulationMode.SineAcceleration)
+        {
+            _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
+            _dataProviders = [new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 }];
+        }
+        else if (mode == SimulationMode.CircluarSineAccelerationHorizontal || mode == SimulationMode.CircluarSineAccelerationVertical)
+        {
+            _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
+            _dataProviders = [
+                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 },
+                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5, InitialPhase = Math.PI / 2 }
             ];
         }
         else

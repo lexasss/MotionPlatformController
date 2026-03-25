@@ -1,5 +1,8 @@
-﻿namespace ValtraIMU;
+﻿using System.ComponentModel;
 
+namespace ValtraIMU;
+
+[TypeConverter(typeof(FriendlyEnumConverter))]
 internal enum SimulationMode
 {
     /// <summary>
@@ -18,4 +21,16 @@ internal enum SimulationMode
     /// Sine motion on two axes, with Pi/2 phase difference.
     /// </summary>
     CircluarSway,
+    /// <summary>
+    /// Sine acceleration on a defined axis.
+    /// </summary>
+    SineAcceleration,
+    /// <summary>
+    /// Sine acceleration on two axes (horizontal), with Pi/2 phase difference.
+    /// </summary>
+    CircluarSineAccelerationHorizontal,
+    /// <summary>
+    /// Sine acceleration on two axes (vertical), with Pi/2 phase difference.
+    /// </summary>
+    CircluarSineAccelerationVertical,
 }

@@ -6,26 +6,47 @@ internal class LinearAcceleration : ITelemetryConfiger
 {
     public void Config(ref FSMI_TelemetryACE telemetry, Settings settings, double[] values)
     {
-        var value = values[0];
-
         if (settings.IsVerbose && !settings.IsDebugMode)
         {
             Console.CursorLeft = 0;
-            Console.Write($"LinearAcceleleration.{settings.Axis.Value}: {value:F4} m/s²");
+            var valuesStr = string.Join(' ', values.Select(value => $"{value:F4} m/s²"));
+            Console.Write($"LinearAcceleleration: {valuesStr}");
         }
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];
-        switch (settings.Axis.Value)
+        if (values.Length == 1)
         {
-            case Axis.Right:
-                linAccel.right = (float)value;
-                break;
-            case Axis.Forward:
-                linAccel.forward = (float)value;
-                break;
-            case Axis.Upward:
-                linAccel.upward = (float)value;
-                break;
+            switch (settings.Axis.Value)
+            {
+                case Axis.Right:
+                    linAccel.right = (float)values[0];
+                    break;
+                case Axis.Forward:
+                    linAccel.forward = (float)values[0];
+                    break;
+                case Axis.Upward:
+                    linAccel.upward = (float)values[0];
+                    break;
+            }
+        }
+        else if (values.Length == 2)
+        {
+            if (settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationHorizontal)
+            {
+                linAccel.right = (float)values[0];
+                linAccel.forward = (float)values[1];
+            }
+            else if (settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationVertical)
+            {
+                linAccel.right = (float)values[0];
+                linAccel.upward = (float)values[1];
+            }
+        }
+        else if (values.Length == 3)
+        {
+            linAccel.right = (float)values[0];
+            linAccel.forward = (float)values[1];
+            linAccel.upward = (float)values[2];
         }
     }
 }

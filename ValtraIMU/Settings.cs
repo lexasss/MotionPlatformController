@@ -59,7 +59,9 @@ internal class Settings : CommandSettings
                         "1. Recorded file",
                         "2. Simulated data"
                     ])
-                ).StartsWith("2") ? SIM_LABEL : null);
+                ).StartsWith('2') ? SIM_LABEL : null);
+
+        Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", Amplitude);
 
         if (Filename.Value == SIM_LABEL)
         {
@@ -69,7 +71,8 @@ internal class Settings : CommandSettings
                     .AddChoices(Enum.GetValues<SimulationMode>()));
 
             if (SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel ||
-                SimulationMode.Value == ValtraIMU.SimulationMode.MovePulse)
+                SimulationMode.Value == ValtraIMU.SimulationMode.MovePulse ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration)
             {
                 Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
                     new SelectionPrompt<Axis>()
