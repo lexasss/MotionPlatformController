@@ -76,7 +76,5 @@ internal class Program : Command<Settings>
         //Console.Write("Parking the platform... ");
         //mi.Park(FSMI_ParkMode.Normal);
         //await Task.Delay(3000);
-
-        Console.WriteLine("done.");
     }
 }

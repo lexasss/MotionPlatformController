@@ -38,6 +38,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         Console.WriteLine("Press:");
         Console.WriteLine(" - ESC or 'q' to exit");
         Console.WriteLine(" - SPACE to pause/continue");
+        Console.WriteLine(" - 'v' to toggle verbosity");
+        Console.WriteLine(" - 'd' to toggle MotionPlatform diagnostics data output");
         Console.WriteLine("\nRunning . . .");
 
         while (true)
@@ -108,11 +110,11 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         if (Console.KeyAvailable)
         {
             var key = Console.ReadKey(true);
-            if (key.Key == ConsoleKey.Escape || key.KeyChar == 'q')
+            if (key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.Q)
             {
                 return KeyHandlerResult.Exiting;
             }
-            else if (key.KeyChar == ' ')
+            else if (key.Key == ConsoleKey.Spacebar)
             {
                 _isPaused = !_isPaused;
                 if (_isPaused)
@@ -130,6 +132,14 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
                     Console.WriteLine("Running . . .");
                 }
                 return KeyHandlerResult.Handled;
+            }
+            else if (key.Key == ConsoleKey.V)
+            {
+                _settings.IsVerbose = !_settings.IsVerbose;
+            }
+            else if (key.Key == ConsoleKey.D)
+            {
+                _settings.IsDebugMode = !_settings.IsDebugMode;
             }
         }
 
