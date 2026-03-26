@@ -62,7 +62,7 @@ internal class DisplayPrinter
             info.fkPitch_deg,
             info.fkYaw_deg);
         Console.WriteLine("    Velocity, mm/s and deg/s");
-        Console.WriteLine("          Position: heave {0,-8:N2} surge {1,-8:N4}  sway {2,-8:N2}",
+        Console.WriteLine("          Position: heave {0,-8:N2} surge {1,-8:N2}  sway {2,-8:N2}",
             info.fkHeaveSpeed,
             info.fkSurgeSpeed,
             info.fkSwaySpeed);
@@ -71,7 +71,7 @@ internal class DisplayPrinter
             info.fkPitchSpeed_deg,
             info.fkYawSpeed_deg);
         Console.WriteLine("    Acceleration, mm/s^2 and deg/s^2");
-        Console.WriteLine("          Position: heave {0,-8:N2} surge {1,-8:N4}  sway {2,-8:N2}",
+        Console.WriteLine("          Position: heave {0,-8:N2} surge {1,-8:N2}  sway {2,-8:N2}",
             info.fkHeaveAcc,
             info.fkSurgeAcc,
             info.fkSwayAcc);

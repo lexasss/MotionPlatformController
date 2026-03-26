@@ -38,6 +38,10 @@ internal class Settings : CommandSettings
     [DefaultValue(1)]
     public int SkipRate { get; set; }
 
+    [CommandOption("-b|--broadcast <DATATYPE>")]
+    [Description("Data type to broadcast")]
+    public FlagValue<BroadcastDataType> BroadcastDataType { get; set; } = new FlagValue<BroadcastDataType>();
+
     [CommandOption("-v|--verbose")]
     [Description("Debug info is printed in the verbose mode.")]
     [DefaultValue(false)]
@@ -87,6 +91,11 @@ internal class Settings : CommandSettings
         IsVerbose = context?.IsVerbose ?? IsVerbose;
 
         Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
+
+        BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(
+            new SelectionPrompt<BroadcastDataType>()
+                .Title("Select broadcast data:")
+                .AddChoices(Enum.GetValues<BroadcastDataType>()));
     }
 
     const string SIM_LABEL = "sim";

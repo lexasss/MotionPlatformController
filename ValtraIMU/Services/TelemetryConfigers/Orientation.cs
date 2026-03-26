@@ -9,7 +9,7 @@ internal class Orientation : ITelemetryConfiger
         if (settings.IsVerbose && !settings.IsDebugMode)
         {
             Console.CursorLeft = 0;
-            Console.Write($"BodyPitch: {value[0]:F4} rad, BodyRoll: {value[1]:F4}");
+            Console.Write($"BodyPitch: {value[0]:F4} rad, BodyRoll: {value[1]:F4} rad");
         }
 
         telemetry.bodyPitch = (float)value[0];

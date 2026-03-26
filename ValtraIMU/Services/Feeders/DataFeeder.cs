@@ -73,7 +73,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
                 }
                 else if (miInfoUpdateResult == Result.Ok)
                 {
-                    _telemetryBroadcaster.Send(ref _platformInfo);
+                    if (_settings.BroadcastDataType.Value == BroadcastDataType.PlatformInfo)
+                        _telemetryBroadcaster.Send(ref _platformInfo);
 
                     if (_settings.IsDebugMode)
                         printer.PrintStatus(ref _platformInfo);
@@ -148,7 +149,9 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         var result = PrepareTelemetry();
         if (result)
         {
-            //_telemetryBroadcaster.Send(ref _telemetry);
+            if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
+                _telemetryBroadcaster.Send(ref _telemetry);
+
             _mi.SendTelemetryACE(ref _telemetry);
         }
 
