@@ -21,7 +21,6 @@ internal class Program : Command<Settings>
     {
         bool hasFinished = false;
 
-
         do
         {
             Console.Clear();

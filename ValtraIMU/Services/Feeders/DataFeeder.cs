@@ -46,6 +46,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         Console.WriteLine(" - 'd' to toggle MotionPlatform diagnostics data output");
         Console.WriteLine("\nRunning . . .");
 
+        Console.CursorVisible = false;
+
         while (true)
         {
             var userInput = HandleKeyPress();
@@ -88,7 +90,9 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 
         if (Console.CursorLeft > 0)
             Console.WriteLine();
+
         Console.WriteLine("Stopped.");
+        Console.CursorVisible = true;
 
         _mi.EndMotionControl();
 
