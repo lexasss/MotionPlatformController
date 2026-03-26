@@ -6,13 +6,13 @@ internal class LinearVelocity(int interval) : ITelemetryConfiger
 {
     public void Config(ref FSMI_TelemetryACE telemetry, Settings settings, double[] values)
     {
-        var value = values[0];
-        var acceleration = (value - _speed) / _interval;
+        var velocity = values[0];
+        var acceleration = (velocity - _speed) / _interval;
 
         if (settings.IsVerbose && !settings.IsDebugMode)
         {
             Console.CursorLeft = 0;
-            Console.Write($"LinearVelocity.{settings.Axis.Value}: {value:F4} m/s, LinearAcceleration.{settings.Axis.Value}: {acceleration:F4} m/s²");
+            Console.Write($"LinearVelocity.{settings.Axis.Value}: {velocity:F4} m/s, LinearAcceleration.{settings.Axis.Value}: {acceleration:F4} m/s²");
         }
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];
@@ -21,19 +21,19 @@ internal class LinearVelocity(int interval) : ITelemetryConfiger
         {
             case Axis.Right:
                 linAccel.right = (float)acceleration;
-                linVelocity.right = (float)value;
+                linVelocity.right = (float)velocity;
                 break;
             case Axis.Forward:
                 linAccel.forward = (float)acceleration;
-                linVelocity.forward = (float)value;
+                linVelocity.forward = (float)velocity;
                 break;
             case Axis.Upward:
                 linAccel.upward = (float)acceleration;
-                linVelocity.upward = (float)value;
+                linVelocity.upward = (float)velocity;
                 break;
         }
 
-        _speed = value;
+        _speed = velocity;
     }
 
     #region Internal

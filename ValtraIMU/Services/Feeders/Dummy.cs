@@ -13,7 +13,6 @@ internal class Dummy : DataFeeder
     public Dummy(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
     {
         var mode = settings.SimulationMode.Value;
-        _telemetry = FSMI_TelemetryACE.Prepare();
 
         if (mode == SimulationMode.SineWaveAccel)
         {
@@ -72,7 +71,7 @@ internal class Dummy : DataFeeder
     /// Sends simulated telemetry data.
     /// </summary>
     /// <returns>true if there was data to send, false otherwise.</returns>
-    protected override bool SendData()
+    protected override bool PrepareTelemetry()
     {
         _telemetry.state = FSMI_State.NO_PAUSE;
 
@@ -93,10 +92,6 @@ internal class Dummy : DataFeeder
 
         _telemetryConfiger.Config(ref _telemetry, _settings, values);
 
-        _telemetryBroadcaster.Send(ref _telemetry);
-
-        _mi.SendTelemetryACE(ref _telemetry);
-
         _nextSampleTimestamp += Settings.Interval;
 
         return true;
@@ -106,8 +101,6 @@ internal class Dummy : DataFeeder
 
     readonly DataProviders.IDataProvider<double>[] _dataProviders;
     readonly TelemetryConfigers.ITelemetryConfiger _telemetryConfiger;
-
-    FSMI_TelemetryACE _telemetry;
 
     #endregion
 }

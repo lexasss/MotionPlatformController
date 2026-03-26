@@ -6,14 +6,14 @@ namespace ValtraIMU.Feeders;
 
 /// <summary>
 /// Base class for feeding data to MotionPlatform using ForceSeatMI.
-/// It handles the main loop and timing, while descendants implement <see cref="SendData">SendData</see> to send data 
-/// and set <see cref="_nextSampleTimestamp">_nextSampleTimestamp</see>.
+/// It handles the main loop and timing, while descendants implement <see cref="PrepareTelemetry"> 
+/// where they set the telemetry fields before this class method <see cref="SendData"/>
+/// broadcasts and upstreams it to the MotionPlatform. Descendants also set <see cref="_nextSampleTimestamp">.
 /// </summary>
 /// <param name="mi">ForceSeatMI object</param>
 /// <param name="settings">settings object</param>
 internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 {
-
     /// <summary>
     /// Starts and manages the main simulation loop: the MP control, periodic data transmission,
     /// MP status display, and graceful shutdown upon user request.
@@ -79,22 +79,29 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 
     protected readonly Settings _settings = settings;
 
-    protected readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
-
-    protected ForceSeatMI_NET8 _mi = mi;
-    protected long _nextSampleTimestamp = 0;    /// ms relative to the start, to be set by descendants in <see cref="SendData">SendData</see>.
+    /// <summary>
+    /// To be filled by descendants when calling <see cref="PrepareTelemetry"/>
+    /// </summary>
+    protected FSMI_TelemetryACE _telemetry = FSMI_TelemetryACE.Prepare();
 
     /// <summary>
-    /// To be implemented by descendants to send data and set <see cref="_nextSampleTimestamp">_nextSampleTimestamp</see> for the next sample.
+    /// Time in milliseconds relative to the start, to be set by descendants in <see cref="SendData">.
+    /// </summary>
+    protected long _nextSampleTimestamp = 0;
+
+    /// <summary>
+    /// To be implemented by descendants to fill <see cref="_telemetry"/> and set <see cref="_nextSampleTimestamp">.
     /// </summary>
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
-    protected abstract bool SendData();
+    protected abstract bool PrepareTelemetry();
 
     #endregion
 
     #region Internal
 
+    readonly ForceSeatMI_NET8 _mi = mi;
     readonly Stopwatch _stopwatch = new();
+    readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
     bool _isPaused = false;
 
@@ -103,6 +110,18 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         None,
         Handled,
         Exiting
+    }
+
+    private bool SendData()
+    {
+        var result = PrepareTelemetry();
+        if (result)
+        {
+            _telemetryBroadcaster.Send(ref _telemetry);
+            _mi.SendTelemetryACE(ref _telemetry);
+        }
+
+        return result;
     }
 
     private KeyHandlerResult HandleKeyPress()
