@@ -11,23 +11,30 @@ namespace ValtraIMU;
 /// </summary>
 internal class Program : Command<Settings>
 {
+    public record class ContextArgs(double? Amplitude = null, bool? IsDebugMode = null, bool? IsVerbose = null);
+
     static string ProfileName => "SDK - Vehicle Telemetry ACE";
+
+    static ContextArgs _contextArgs = new();
 
     static void Main(string[] args)
     {
         bool hasFinished = false;
+
 
         do
         {
             Console.Clear();
 
             var app = new CommandApp<Program>();
+            app.WithData(_contextArgs);
             app.Configure(config =>
             {
                 config.SetApplicationCulture(CultureInfo.GetCultureInfo("en-US"));
                 config.SetApplicationName($"{Assembly.GetExecutingAssembly().FullName?.Split(',')[0]}.exe");
             });
             hasFinished = app.Run(args) != 0;
+
         } while (!hasFinished);
     }
 
@@ -40,7 +47,7 @@ internal class Program : Command<Settings>
     /// <returns>0 as marker than user did not requested to exit, non-zero otherwise</returns>
     public override int Execute(CommandContext context, Settings settings, CancellationToken cts)
     {
-        settings.Resolve();
+        settings.Resolve((ContextArgs?)context.Data);
 
         // Try to create IMU data provider
         var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
@@ -52,6 +59,8 @@ internal class Program : Command<Settings>
         // Run the feeder
         Task<Result> task = Task.Run(async Task<Result>? () => await RunMotionPlatform(settings, imuDataProvider), cts);
         task.Wait(cts);
+
+        _contextArgs = new ContextArgs(settings.Amplitude, settings.IsDebugMode, settings.IsVerbose);
 
         if (task.IsCanceled)
             return -1;

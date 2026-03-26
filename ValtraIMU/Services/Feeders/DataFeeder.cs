@@ -64,8 +64,18 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
                 if (!SendData())
                     break;
 
-                if (_settings.IsDebugMode && !printer.PrintStatus(_mi))
+                var miInfoUpdateResult = UpdateMotionPlatformInfo();
+                if (miInfoUpdateResult == Result.Failed)
+                {
                     break;
+                }
+                else if (miInfoUpdateResult == Result.Ok)
+                {
+                    _telemetryBroadcaster.Send(ref _platformInfo);
+
+                    if (_settings.IsDebugMode)
+                        printer.PrintStatus(ref _platformInfo);
+                }
             }
 
             while (_stopwatch.ElapsedMilliseconds < _nextSampleTimestamp)
@@ -115,7 +125,11 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     readonly Stopwatch _stopwatch = new();
     readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
+    static FSMI_PlatformInfo _platformInfo = new();
+    readonly uint _piSize = (uint)Marshal.SizeOf(_platformInfo);
+
     bool _isPaused = false;
+    ulong _recentMark = 0;
 
     enum KeyHandlerResult
     {
@@ -130,7 +144,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         var result = PrepareTelemetry();
         if (result)
         {
-            _telemetryBroadcaster.Send(ref _telemetry);
+            //_telemetryBroadcaster.Send(ref _telemetry);
             _mi.SendTelemetryACE(ref _telemetry);
         }
 
@@ -180,6 +194,34 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         }
 
         return KeyHandlerResult.None;
+    }
+
+    private Result UpdateMotionPlatformInfo()
+    {
+        // Get current status
+        if (_mi.GetPlatformInfoEx(ref _platformInfo, _piSize, 100))
+        {
+            if (_platformInfo.structSize != Marshal.SizeOf(_platformInfo))
+            {
+                Console.WriteLine("Incorrect structure size: {0} vs {1}", _platformInfo.structSize, Marshal.SizeOf(_platformInfo));
+                return Result.Failed;
+            }
+            else if (_platformInfo.timemark == _recentMark)
+            {
+                //Console.WriteLine("No new platform info");
+            }
+            else
+            {
+                _recentMark = _platformInfo.timemark;
+                return Result.Ok;
+            }
+        }
+        else
+        {
+            Console.WriteLine("Failed to get platform info");
+        }
+
+        return Result.Canceled;
     }
 
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]

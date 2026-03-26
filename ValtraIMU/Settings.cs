@@ -50,7 +50,7 @@ internal class Settings : CommandSettings
 
     public static int Interval => 4;   // ms, corresponds to 250 Hz
 
-    public void Resolve()
+    public void Resolve(Program.ContextArgs? context)
     {
         Filename.Value = Filename.IsSet ? Filename.Value : (AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -60,8 +60,6 @@ internal class Settings : CommandSettings
                         "2. Simulated data"
                     ])
                 ).StartsWith('2') ? SIM_LABEL : null);
-
-        Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", Amplitude);
 
         if (Filename.Value == SIM_LABEL)
         {
@@ -84,6 +82,11 @@ internal class Settings : CommandSettings
         {
             Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
         }
+
+        IsDebugMode = context?.IsDebugMode ?? IsDebugMode;
+        IsVerbose = context?.IsVerbose ?? IsVerbose;
+
+        Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
     }
 
     const string SIM_LABEL = "sim";
