@@ -17,16 +17,17 @@ internal class TelemetryBroadcaster
 
     public void Send(ref FSMI_TelemetryACE telemetry)
     {
-        ref var velBody = ref telemetry.bodyLinearVelocity[0];
-        ref var accBody = ref telemetry.bodyLinearAcceleration[0];
+        ref var linVel = ref telemetry.bodyLinearVelocity[0];
+        ref var linAcc = ref telemetry.bodyLinearAcceleration[0];
+        ref var angVel = ref telemetry.bodyAngularVelocity[0];
 
-        Send(0, DateTime.Now.Ticks,
+        Send(0, DateTime.Now.Ticks,                         // time
             0, 0, 0, 0, 0,      // location
             telemetry.bodyRoll, telemetry.bodyPitch, 0,     // rotation
-            velBody.forward, velBody.right, velBody.upward, // linear velocity
+            linVel.forward, linVel.right, linVel.upward,    // linear velocity
             0, 0, 0,            // earth-based acceleration
-            accBody.forward, accBody.right, accBody.upward, // body acceleration
-            0, 0, 0             // angular velocity
+            linAcc.forward, linAcc.right, linAcc.upward,    // body acceleration
+            angVel.pitch, angVel.yaw, angVel.roll           // angular velocity
         );
     }
 

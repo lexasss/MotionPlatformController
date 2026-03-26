@@ -20,12 +20,15 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     /// </summary>
     /// <remarks>This method is blocking and should be called from a thread that can safely wait for user input.
     /// Subsequent calls to this method without proper cleanup may result in unexpected behavior.</remarks>
-    public virtual void Run()
+    /// <returns>Execution result</returns>
+    public virtual Result Run()
     {
+        var result = Result.Ok;
+
         if (!_mi.BeginMotionControl())
         { 
             Console.WriteLine("Failed to start motion control!");
-            return;
+            return Result.Failed;
         }
 
         _ = TimeBeginPeriod(1);
@@ -36,7 +39,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         _nextSampleTimestamp = 0;
 
         Console.WriteLine("Press:");
-        Console.WriteLine(" - ESC or 'q' to exit");
+        Console.WriteLine(" - ESC to terminate");
+        Console.WriteLine(" - 's' to stop current data stream");
         Console.WriteLine(" - SPACE to pause/continue");
         Console.WriteLine(" - 'v' to toggle verbosity");
         Console.WriteLine(" - 'd' to toggle MotionPlatform diagnostics data output");
@@ -44,8 +48,14 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 
         while (true)
         {
-            if (HandleKeyPress() == KeyHandlerResult.Exiting)
+            var userInput = HandleKeyPress();
+            if (userInput == KeyHandlerResult.Interrupted)
             {
+                break;
+            }
+            else if (userInput == KeyHandlerResult.Exiting)
+            {
+                result = Result.Canceled;
                 break;
             }
 
@@ -73,6 +83,8 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         _mi.EndMotionControl();
 
         _ = TimeEndPeriod(1);
+
+        return result;
     }
 
     #region Shared with descendants
@@ -109,6 +121,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     {
         None,
         Handled,
+        Interrupted,
         Exiting
     }
 
@@ -129,9 +142,13 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         if (Console.KeyAvailable)
         {
             var key = Console.ReadKey(true);
-            if (key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.Q)
+            if (key.Key == ConsoleKey.Escape)
             {
                 return KeyHandlerResult.Exiting;
+            }
+            else if (key.Key == ConsoleKey.S)
+            {
+                return KeyHandlerResult.Interrupted;
             }
             else if (key.Key == ConsoleKey.Spacebar)
             {
