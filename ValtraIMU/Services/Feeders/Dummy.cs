@@ -80,8 +80,8 @@ internal class Dummy : DataFeeder
         {
             values = _dataProviders.Select(dp =>
             {
-                if (!dp.Get(_nextSampleTimestamp, out double value))
-                    throw new Exception($"Data provider failed to provide data for timestamp {_nextSampleTimestamp}.");
+                if (!dp.Get(_nextRecordTimestamp, out double value))
+                    throw new Exception($"Data provider failed to provide data for timestamp {_nextRecordTimestamp}.");
                 return value;
             }).ToArray();
         }
@@ -92,7 +92,7 @@ internal class Dummy : DataFeeder
 
         _telemetryConfiger.Config(ref _telemetry, _settings, values);
 
-        _nextSampleTimestamp += Settings.Interval;
+        _nextRecordTimestamp += Settings.Interval;
 
         return true;
     }

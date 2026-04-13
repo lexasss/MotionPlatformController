@@ -1,6 +1,6 @@
 ﻿namespace ValtraIMU.Models;
 
-internal record class Angular
+internal interface IAngular
 {
     protected static double Deg2Rad(double degrees) => degrees * Math.PI / 180;
 }
@@ -27,12 +27,12 @@ internal record class Orientation(
     double Pitch,
     /// <summary>degrees</summary>
     double Heading
-) : Angular
+) : IAngular
 {
     public Orientation ToRadians() => new(
-        Roll: Deg2Rad(Roll),
-        Pitch: Deg2Rad(Pitch),
-        Heading: Deg2Rad(Heading)
+        Roll: IAngular.Deg2Rad(Roll),
+        Pitch: IAngular.Deg2Rad(Pitch),
+        Heading: IAngular.Deg2Rad(Heading)
     );
 }
 
@@ -69,18 +69,17 @@ internal record class AngularVelocity(
     double Y,
     /// <summary>degrees/s</summary>
     double Z
-) : Angular
+) : IAngular
 {
     public AngularVelocity ToRadians() => new(
-        X: Deg2Rad(X),
-        Y: Deg2Rad(Y),
-        Z: Deg2Rad(Z)
+        X: IAngular.Deg2Rad(X),
+        Y: IAngular.Deg2Rad(Y),
+        Z: IAngular.Deg2Rad(Z)
     );
 }
 
-internal record class IMUData(
+internal record class IMUFrontRecord(
     int Week,
-    /// <summary>milliseconds since the start of the session</summary>
     long Time,
     Coordinates Coordinates,
     Position Position,
@@ -89,4 +88,4 @@ internal record class IMUData(
     AbsoluteAcceleration AbsoluteAcceleration,
     BodyAcceleration BodyAcceleration,
     AngularVelocity AngularVelocity
-);
+) : IRecord;

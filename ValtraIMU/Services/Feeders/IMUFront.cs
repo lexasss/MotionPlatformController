@@ -4,15 +4,10 @@ namespace ValtraIMU.Feeders;
 
 /// <summary>
 /// Implements data feeding to MotionPlatform using ForceSeatMI.
-/// The IMU+GNSS data can be obtained using <see cref="DataProviders.IMUFile">.
+/// The IMU+GNSS data can be obtained using <see cref="DataProviders.IMUFileFront">.
 /// </summary>
-internal class IMU : DataFeeder
+internal class IMUFront(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileFront dataProvider) : DataFeeder(mi, settings)
 {
-    public IMU(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFile dataProvider) : base(mi, settings)
-    {
-        _dataProvider = dataProvider;
-    }
-
     /// <summary>
     /// Implements the data conversion between IMU+GNSS and MotionPlatform formats and sending logic.
     /// </summary>
@@ -24,40 +19,40 @@ internal class IMU : DataFeeder
 
         _telemetry.state = FSMI_State.NO_PAUSE;
 
-        var data = _dataProvider.Current;
+        var record = _dataProvider.Current;
 
-        var angVelAsRadians = data.AngularVelocity.ToRadians();
-        var orientAsRadians = data.Orientation.ToRadians();
+        var angVelAsRadians = record.AngularVelocity.ToRadians();
+        var orientAsRadians = record.Orientation.ToRadians();
 
         var amplitude = _settings.Amplitude;
 
         _telemetry.bodyAngularVelocity[0].yaw = (float)(angVelAsRadians.Z * amplitude);
         _telemetry.bodyAngularVelocity[0].pitch = (float)(angVelAsRadians.X * amplitude);
         _telemetry.bodyAngularVelocity[0].roll = (float)(angVelAsRadians.Y * amplitude);
-        _telemetry.bodyLinearAcceleration[0].forward = (float)(data.BodyAcceleration.Y * amplitude);
-        _telemetry.bodyLinearAcceleration[0].upward = (float)(data.BodyAcceleration.Z * amplitude);
-        _telemetry.bodyLinearAcceleration[0].right = (float)(data.BodyAcceleration.X * amplitude);
+        _telemetry.bodyLinearAcceleration[0].forward = (float)(record.BodyAcceleration.Y * amplitude);
+        _telemetry.bodyLinearAcceleration[0].upward = (float)(record.BodyAcceleration.Z * amplitude);
+        _telemetry.bodyLinearAcceleration[0].right = (float)(record.BodyAcceleration.X * amplitude);
 
         _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
         _telemetry.bodyRoll = (float)orientAsRadians.Roll;
 
-        if (_settings.IsVerbose && !_settings.IsDebugMode && _nextSampleTimestamp % 100 == 0)
+        if (_settings.IsVerbose && !_settings.IsDebugMode && _nextRecordTimestamp % 100 == 0)
         {
             Console.CursorLeft = 0;
-            Console.Write($"[{data.Time:F3}] ");
+            Console.Write($"[{record.Time:F3}] ");
             Console.Write($"Vel: yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");
-            Console.Write($"Acc: f {data.BodyAcceleration.Y,8:F4}, u {data.BodyAcceleration.Z,8:F4}, r {data.BodyAcceleration.X,8:F4} | ");
+            Console.Write($"Acc: f {record.BodyAcceleration.Y,8:F4}, u {record.BodyAcceleration.Z,8:F4}, r {record.BodyAcceleration.X,8:F4} | ");
             Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
         }
 
-        _nextSampleTimestamp = data.Time;
+        _nextRecordTimestamp = (long)record.Time;
 
         return true;
     }
 
     #region Internal
 
-    readonly DataProviders.IMUFile _dataProvider;
+    readonly DataProviders.IMUFileFront _dataProvider = dataProvider;
 
     #endregion
 }

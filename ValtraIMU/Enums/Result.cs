@@ -4,5 +4,6 @@ internal enum Result
 {
     Ok,
     Failed,
-    Canceled,
+    Stopped,
+    Exiting,
 }

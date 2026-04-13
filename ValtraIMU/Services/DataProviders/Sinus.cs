@@ -10,7 +10,7 @@ internal class Sinus(Settings settings, double initialPhase = 0) : IDataProvider
     /// <summary>
     /// IDataProvider implementation
     /// </summary>
-    public double Current => _nextData ?? throw new Exception();
+    public double Current => _nextValue ?? throw new Exception();
 
     public double Amplitude { get; set; } = settings.Amplitude;
     public double Frequency { get; set; } = settings.Frequency;
@@ -24,14 +24,14 @@ internal class Sinus(Settings settings, double initialPhase = 0) : IDataProvider
 
     public void Reset()
     {
-        _nextData = null;
+        _nextValue = null;
         _timestamp = 0;
     }
 
     public bool Get(long timestamp, out double result)
     {
         result = Amplitude * Math.Sin(InitialPhase + CYCLE_MS * Frequency * timestamp);
-        _nextData = result;
+        _nextValue = result;
         return true;
     }
 
@@ -45,7 +45,7 @@ internal class Sinus(Settings settings, double initialPhase = 0) : IDataProvider
 
     object System.Collections.IEnumerator.Current => Current;
 
-    double? _nextData = null;
+    double? _nextValue = null;
     long _timestamp = 0;
 
     #endregion

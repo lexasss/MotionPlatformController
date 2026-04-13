@@ -49,14 +49,20 @@ internal class Program : Command<Settings>
         settings.Resolve((ContextArgs?)context.Data);
 
         // Try to create IMU data provider
-        var imuDataProvider = DataProviders.IMUFile.Create(ref settings);
-        if (imuDataProvider == null)
+        DataProviders.IMUFileFront? imuFrontProvider = DataProviders.IMUFileFront.Create(ref settings);
+        DataProviders.IMUFileCabin? imuCabinProvider = null;
+
+        if (imuFrontProvider == null)
         {
-            Console.WriteLine($"Simulation mode {settings.SimulationMode.Value}.");
+            imuCabinProvider = DataProviders.IMUFileCabin.Create(ref settings);
+            if (imuCabinProvider == null)
+            {
+                Console.WriteLine($"Simulation mode {settings.SimulationMode.Value}.");
+            }
         }
 
         // Run the feeder
-        Task<Result> task = Task.Run(async Task<Result>? () => await RunMotionPlatform(settings, imuDataProvider), cts);
+        Task<Result> task = Task.Run(async Task<Result>? () => await RunMotionPlatform(settings, imuFrontProvider, imuCabinProvider), cts);
         task.Wait(cts);
 
         _contextArgs = new ContextArgs(settings.Amplitude, settings.IsDebugMode, settings.IsVerbose);
@@ -64,16 +70,17 @@ internal class Program : Command<Settings>
         if (task.IsCanceled)
             return -1;
 
-        if (task.Result != Result.Canceled)
+        if (task.Result != Result.Exiting)
         {
-            var shouldRunAnotherTask = AnsiConsole.Ask("Run another task (y/n):", "n").Equals("y", StringComparison.CurrentCultureIgnoreCase);
+            var defaultAnswer = task.Result == Result.Stopped ? "y" : "n";
+            var shouldRunAnotherTask = AnsiConsole.Ask("Run another task (y/n):", defaultAnswer).Equals("y", StringComparison.CurrentCultureIgnoreCase);
             return shouldRunAnotherTask ? 0 : -1;
         }
 
         return -1;
     }
 
-    static async Task<Result> RunMotionPlatform(Settings settings, DataProviders.IMUFile? imuDataProvider)
+    static async Task<Result> RunMotionPlatform(Settings settings, DataProviders.IMUFileFront? imuFrontProvider, DataProviders.IMUFileCabin? imuCabinProvider)
     {
         using var mi = new ForceSeatMI_NET8();
 
@@ -93,9 +100,13 @@ internal class Program : Command<Settings>
         await Task.Delay(3000);
         Console.WriteLine("done.");
 
-        Feeders.DataFeeder feeder = imuDataProvider == null ?
-            new Feeders.Dummy(mi, settings) :
-            new Feeders.IMU(mi, settings, imuDataProvider);
+        Feeders.DataFeeder feeder;
+        if (imuFrontProvider != null)
+            feeder = new Feeders.IMUFront(mi, settings, imuFrontProvider);
+        else if (imuCabinProvider != null)
+            feeder = new Feeders.IMUCabin(mi, settings, imuCabinProvider);
+        else
+            feeder = new Feeders.Dummy(mi, settings);
 
         return feeder.Run();
 

@@ -8,7 +8,7 @@ namespace ValtraIMU.Feeders;
 /// Base class for feeding data to MotionPlatform using ForceSeatMI.
 /// It handles the main loop and timing, while descendants implement <see cref="PrepareTelemetry"> 
 /// where they set the telemetry fields before this class method <see cref="SendData"/>
-/// broadcasts and upstreams it to the MotionPlatform. Descendants also set <see cref="_nextSampleTimestamp">.
+/// broadcasts and upstreams it to the MotionPlatform. Descendants also set <see cref="_nextRecordTimestamp">.
 /// </summary>
 /// <param name="mi">ForceSeatMI object</param>
 /// <param name="settings">settings object</param>
@@ -36,7 +36,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         var printer = new Services.DisplayPrinter();
 
         _stopwatch.Start();
-        _nextSampleTimestamp = 0;
+        _nextRecordTimestamp = 0;
 
         Console.WriteLine("Press:");
         Console.WriteLine(" - ESC to terminate");
@@ -53,11 +53,12 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
             var userInput = HandleKeyPress();
             if (userInput == KeyHandlerResult.Interrupted)
             {
+                result = Result.Stopped;
                 break;
             }
             else if (userInput == KeyHandlerResult.Exiting)
             {
-                result = Result.Canceled;
+                result = Result.Exiting;
                 break;
             }
 
@@ -69,6 +70,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
                 var miInfoUpdateResult = UpdateMotionPlatformInfo();
                 if (miInfoUpdateResult == Result.Failed)
                 {
+                    result = Result.Failed;
                     break;
                 }
                 else if (miInfoUpdateResult == Result.Ok)
@@ -81,7 +83,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
                 }
             }
 
-            while (_stopwatch.ElapsedMilliseconds < _nextSampleTimestamp)
+            while (_stopwatch.ElapsedMilliseconds < _nextRecordTimestamp)
             {
                 Thread.Sleep(1);
             }
@@ -114,10 +116,10 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     /// <summary>
     /// Time in milliseconds relative to the start, to be set by descendants in <see cref="SendData">.
     /// </summary>
-    protected long _nextSampleTimestamp = 0;
+    protected long _nextRecordTimestamp = 0;
 
     /// <summary>
-    /// To be implemented by descendants to fill <see cref="_telemetry"/> and set <see cref="_nextSampleTimestamp">.
+    /// To be implemented by descendants to fill <see cref="_telemetry"/> and set <see cref="_nextRecordTimestamp">.
     /// </summary>
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected abstract bool PrepareTelemetry();
@@ -228,7 +230,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
             Console.WriteLine("Failed to get platform info");
         }
 
-        return Result.Canceled;
+        return Result.Exiting;
     }
 
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]

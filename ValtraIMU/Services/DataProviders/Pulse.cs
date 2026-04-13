@@ -9,7 +9,7 @@ internal class Pulse(Settings settings) : IDataProvider<double>
     /// <summary>
     /// IDataProvider implementation
     /// </summary>
-    public double Current => _nextData ?? throw new Exception();
+    public double Current => _nextValue ?? throw new Exception();
 
     public double Amplitude { get; set; } = settings.Amplitude;
     
@@ -26,7 +26,7 @@ internal class Pulse(Settings settings) : IDataProvider<double>
 
     public void Reset() 
     {
-        _nextData = null;
+        _nextValue = null;
         _timestamp = 0;
     }
 
@@ -55,10 +55,10 @@ internal class Pulse(Settings settings) : IDataProvider<double>
             value = 0;
         }
 
-        _nextData = value != null ? value * Amplitude : null;
-        result = _nextData ?? default;
+        _nextValue = value != null ? value * Amplitude : null;
+        result = _nextValue ?? default;
 
-        return _nextData != null;
+        return _nextValue != null;
     }
 
     #endregion
@@ -70,7 +70,7 @@ internal class Pulse(Settings settings) : IDataProvider<double>
 
     object System.Collections.IEnumerator.Current => Current;
 
-    double? _nextData = null;
+    double? _nextValue = null;
     long _timestamp = 0;
 
     #endregion
