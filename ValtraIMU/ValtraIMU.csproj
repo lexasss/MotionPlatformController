@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="IIR_Butterworth_CS_Library" Version="1.1.2" />
     <PackageReference Include="SharpDialogs" Version="1.0.10" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
   </ItemGroup>

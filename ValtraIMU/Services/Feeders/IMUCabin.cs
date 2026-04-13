@@ -24,14 +24,18 @@ internal class IMUCabin(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IM
         var angVelAsRadians = record.AngularVelocity.ToRadians();
         var orientAsRadians = record.Orientation.ToRadians();
 
+        var acceleration = record.Acceleration; // Models.Acceleration2.FromArray(_accelerationFilter.Process(record.Acceleration.ToArray()));
+        if (_accelVertOffset == 0)  // looks like this is not needed as MotionPlanform ignores high values, but just in case (it is around "g") ...
+            _accelVertOffset = acceleration.Vertical;
+
         var amplitude = _settings.Amplitude;
 
         _telemetry.bodyAngularVelocity[0].yaw = (float)(angVelAsRadians.Yaw * amplitude);
         _telemetry.bodyAngularVelocity[0].pitch = (float)(angVelAsRadians.Pitch * amplitude);
         _telemetry.bodyAngularVelocity[0].roll = (float)(angVelAsRadians.Roll * amplitude);
-        _telemetry.bodyLinearAcceleration[0].forward = (float)(record.Acceleration.Longitudinal * amplitude);
-        _telemetry.bodyLinearAcceleration[0].upward = (float)(record.Acceleration.Vertical * amplitude);
-        _telemetry.bodyLinearAcceleration[0].right = (float)(record.Acceleration.Lateral * amplitude);
+        _telemetry.bodyLinearAcceleration[0].forward = (float)(acceleration.Longitudinal * amplitude);
+        _telemetry.bodyLinearAcceleration[0].upward = (float)((acceleration.Vertical - _accelVertOffset) * amplitude);
+        _telemetry.bodyLinearAcceleration[0].right = (float)(acceleration.Lateral * amplitude);
 
         _telemetry.bodyPitch = (float)orientAsRadians.Pitch;
         _telemetry.bodyRoll = (float)orientAsRadians.Roll;
@@ -53,6 +57,9 @@ internal class IMUCabin(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IM
     #region Internal
 
     readonly DataProviders.IMUFileCabin _dataProvider = dataProvider;
+    //readonly Services.ButterworthFilter _accelerationFilter = new(10, 1, 3, Services.ButterworthFilter.FilterType.HighPass, 0.01);
+
+    double _accelVertOffset = 0;
 
     #endregion
 }

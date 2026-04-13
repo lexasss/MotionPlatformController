@@ -7,7 +7,7 @@ using System.Reflection;
 namespace ValtraIMU;
 
 /// <summary>
-/// The app, either streams Valtra IMU+GNSS data to ForceSeatPM or simulates it with dummy data, depending on the settings.
+/// The app, either streams Valtra IMU (+GNSS) data to ForceSeatPM or simulates it with dummy data, depending on the settings.
 /// </summary>
 internal class Program : Command<Settings>
 {

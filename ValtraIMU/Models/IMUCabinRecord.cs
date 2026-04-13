@@ -7,7 +7,15 @@ internal record class Acceleration2(
     double Longitudinal,
     /// <summary>m/s^2</summary>
     double Vertical
-);
+)
+{
+    public double[] ToArray() => [Lateral, Longitudinal, Vertical];
+    public static Acceleration2 FromArray(double[] arr) => new(
+        Lateral: arr[0],
+        Longitudinal: arr[1],
+        Vertical: arr[2]
+    );
+};
 
 internal record class AngularVelocity2(
     /// <summary>degrees/s</summary>
