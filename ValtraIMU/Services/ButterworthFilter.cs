@@ -13,19 +13,22 @@ internal class ButterworthFilter
     public ButterworthFilter(int order, double frequency, int channelCount, FilterType filterType, double cutoff, double cutoff2 = 0)
     {
         _filter = new IIR_Butterworth_CS_Library.IIR_Butterworth();
+
+        var wa = cutoff / (frequency / 2);
+        var wb = cutoff2 / (frequency / 2);
         _coefs = filterType switch
         {
-            FilterType.LowPass => _filter.Lp2lp(cutoff / (frequency / 2), order),
-            FilterType.HighPass => _filter.Lp2hp(cutoff / (frequency / 2), order),
-            FilterType.BandPass => _filter.Lp2bp(cutoff / (frequency / 2), cutoff2 / (frequency / 2), order),
-            FilterType.BandStop => _filter.Lp2bs(cutoff / (frequency / 2), cutoff2 / (frequency / 2), order),
+            FilterType.LowPass => _filter.Lp2lp(wa, order),
+            FilterType.HighPass => _filter.Lp2hp(wa, order),
+            FilterType.BandPass => _filter.Lp2bp(wa, wb, order),
+            FilterType.BandStop => _filter.Lp2bs(wa, wb, order),
             _ => throw new ArgumentException("Invalid filter type")
         };
-        for (int j = 0; j < _coefs[0].Length; j++)
+
+        if (!_filter.Check_stability_iir(_coefs))
         {
-            System.Diagnostics.Debug.Write($" {_coefs[0][j] / _coefs[1][j]:F3}");
+            throw new InvalidOperationException("The filter is unstable.");
         }
-        System.Diagnostics.Debug.WriteLine("");
 
         _size = order + 1;
 
@@ -93,8 +96,7 @@ internal class ButterworthFilter
 
     int _index = 0;
 
-
-
+    // Test method to verify the filter implementation
     public static void Test()
     {
         const int order = 10;
@@ -123,11 +125,18 @@ internal class ButterworthFilter
             System.Diagnostics.Debug.WriteLine("Filter is stable");
             double[] output = filter.Filter_Data(coefs, input);
 
-            var flt = new ButterworthFilter(order, frequency, 1, FilterType.HighPass, cutoff);
-
-            for (int i = 0; i < signalLength; i++)
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"{input[i]:F3} {output[i]:F3} {flt.Process([input[i]])[0]:F3}");
+                var flt = new ButterworthFilter(order, frequency, 1, FilterType.HighPass, cutoff);
+
+                for (int i = 0; i < signalLength; i++)
+                {
+                    System.Diagnostics.Debug.WriteLine($"{input[i]:F3} {output[i]:F3} {flt.Process([input[i]])[0]:F3}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
             }
         }
         else
