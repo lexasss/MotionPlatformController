@@ -1,9 +1,10 @@
 ﻿namespace ValtraIMU.Models;
 
-internal interface IAngular
-{
-    protected static double Deg2Rad(double degrees) => degrees * Math.PI / 180;
-}
+internal record class Vector3D(
+    double X,
+    double Y,
+    double Z
+);
 
 internal record class Coordinates(
     /// <summary>degress</summary>
@@ -36,7 +37,7 @@ internal record class Orientation(
     );
 }
 
-internal record class Velocity(
+internal record class AbsoluteVelocity(
     /// <summary>m/s</summary>
     double East,
     /// <summary>m/s</summary>
@@ -53,14 +54,14 @@ internal record class AbsoluteAcceleration(
     /// <summary>m/s^2</summary>
     double Up);
 
-internal record class BodyAcceleration(
+internal record class Acceleration(
     /// <summary>m/s^2</summary>
     double X,
     /// <summary>m/s^2</summary>
     double Y,
     /// <summary>m/s^2</summary>
     double Z
-);
+) : Vector3D(X, Y, Z);
 
 internal record class AngularVelocity(
     /// <summary>degrees/s</summary>
@@ -69,7 +70,7 @@ internal record class AngularVelocity(
     double Y,
     /// <summary>degrees/s</summary>
     double Z
-) : IAngular
+) : Vector3D(X, Y, Z), IAngular
 {
     public AngularVelocity ToRadians() => new(
         X: IAngular.Deg2Rad(X),
@@ -84,8 +85,8 @@ internal record class IMUFrontRecord(
     Coordinates Coordinates,
     Position Position,
     Orientation Orientation,
-    Velocity Velocity,
+    AbsoluteVelocity Velocity,
     AbsoluteAcceleration AbsoluteAcceleration,
-    BodyAcceleration BodyAcceleration,
+    Acceleration BodyAcceleration,
     AngularVelocity AngularVelocity
 ) : IRecord;

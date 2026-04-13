@@ -1,6 +1,6 @@
 ﻿namespace ValtraIMU.Models;
 
-internal record class Acceleration(
+internal record class Acceleration2(
     /// <summary>m/s^2</summary>
     double Lateral,
     /// <summary>m/s^2</summary>
@@ -25,26 +25,6 @@ internal record class AngularVelocity2(
     );
 }
 
-
-internal record class Orientation2(
-    /// <summary>degrees</summary>
-    double Pitch,
-    /// <summary>degrees</summary>
-    double Roll
-) : IAngular
-{
-    public Orientation2 ToRadians() => new(
-        Pitch: IAngular.Deg2Rad(Pitch),
-        Roll: IAngular.Deg2Rad(Roll)
-    );
-}
-
-internal record class Vector3D(
-    double X,
-    double Y,
-    double Z
-);
-
 internal record class FrontAxleSuspension(
     double Time,        // s
     double Voltage,     // V
@@ -55,9 +35,9 @@ internal record class FrontAxleSuspension(
 internal record class IMUCabinRecord(
     long Time,
 
-    Acceleration Acceleration,
+    Acceleration2 Acceleration,
     AngularVelocity2 AngularVelocity,
-    Orientation2 Orientation,
+    Orientation Orientation,    // Heading is always 0
     Vector3D Body,   // g
     Vector3D Cabin,  // g
 

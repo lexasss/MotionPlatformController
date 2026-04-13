@@ -90,9 +90,9 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
                         new Models.Coordinates(values[2], values[3], values[4]),
                         new Models.Position(values[5], values[6]),
                         new Models.Orientation(values[7], values[8], values[9]),
-                        new Models.Velocity(values[10], values[11], values[12]),
+                        new Models.AbsoluteVelocity(values[10], values[11], values[12]),
                         new Models.AbsoluteAcceleration(values[13], values[14], values[15]),
-                        new Models.BodyAcceleration(values[16], values[17], values[18]),
+                        new Models.Acceleration(values[16], values[17], values[18]),
                         new Models.AngularVelocity(values[19], values[20], values[21])
                     );
 

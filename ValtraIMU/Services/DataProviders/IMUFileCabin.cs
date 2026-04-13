@@ -89,9 +89,9 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
 
                     var imuRecord = new Models.IMUCabinRecord(
                         (long)(1000 * values[0]) - _startTime,
-                        new Models.Acceleration(values[1], values[2], values[3]),
+                        new Models.Acceleration2(values[1], values[2], values[3]),
                         new Models.AngularVelocity2(values[4], values[5], values[6]),
-                        new Models.Orientation2(values[7], values[8]),
+                        new Models.Orientation(values[8], values[7], 0),
                         new Models.Vector3D(values[9], values[10], values[11]),
                         new Models.Vector3D(values[12], values[13], values[14]),
                         values[15], values[16], values[17], (int)values[18],
