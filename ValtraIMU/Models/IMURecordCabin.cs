@@ -1,4 +1,7 @@
-﻿namespace ValtraIMU.Models;
+﻿using Spectre.Console;
+using System.Text.RegularExpressions;
+
+namespace ValtraIMU.Models;
 
 internal record class Acceleration(
     /// <summary>m/s^2</summary>

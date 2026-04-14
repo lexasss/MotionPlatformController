@@ -17,6 +17,7 @@ internal abstract class IMUFile<T> : IDataProvider<T> where T : Models.IRecord
 
         // Skip comments at the beginning of the file
         var line = _stream.ReadLine();
+
         while (line != null && !_stream.EndOfStream)
         {
             if (line.Length > 0 && int.TryParse(line[0..1], out int _))
