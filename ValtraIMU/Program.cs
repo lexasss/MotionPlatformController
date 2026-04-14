@@ -102,11 +102,11 @@ internal class Program : Command<Settings>
 
         Feeders.DataFeeder feeder;
         if (imuFrontProvider != null)
-            feeder = new Feeders.IMUFront(mi, settings, imuFrontProvider);
+            feeder = new Feeders.IMUFeederFront(mi, settings, imuFrontProvider);
         else if (imuCabinProvider != null)
-            feeder = new Feeders.IMUCabin(mi, settings, imuCabinProvider);
+            feeder = new Feeders.IMUFeederCabin(mi, settings, imuCabinProvider);
         else
-            feeder = new Feeders.Dummy(mi, settings);
+            feeder = new Feeders.DummyFeeder(mi, settings);
 
         return feeder.Run();
 

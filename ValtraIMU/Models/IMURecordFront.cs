@@ -1,15 +1,5 @@
 ﻿namespace ValtraIMU.Models;
 
-internal record class Vector3D(
-    double X,
-    double Y,
-    double Z
-)
-{
-    public double[] ToArray() => [X, Y, Z];
-    public static Vector3D FromArray(double[] arr) => new(arr[0], arr[1], arr[2]);
-}
-
 internal record class Coordinates(
     /// <summary>degress</summary>
     double Latitude,
@@ -58,16 +48,7 @@ internal record class AbsoluteAcceleration(
     /// <summary>m/s^2</summary>
     double Up);
 
-internal record class Acceleration(
-    /// <summary>m/s^2</summary>
-    double X,
-    /// <summary>m/s^2</summary>
-    double Y,
-    /// <summary>m/s^2</summary>
-    double Z
-) : Vector3D(X, Y, Z);
-
-internal record class AngularVelocity(
+internal record class AngularVelocity3D(
     /// <summary>degrees/s</summary>
     double X,
     /// <summary>degrees/s</summary>
@@ -76,14 +57,14 @@ internal record class AngularVelocity(
     double Z
 ) : Vector3D(X, Y, Z), IAngular
 {
-    public AngularVelocity ToRadians() => new(
+    public AngularVelocity3D ToRadians() => new(
         X: IAngular.Deg2Rad(X),
         Y: IAngular.Deg2Rad(Y),
         Z: IAngular.Deg2Rad(Z)
     );
 }
 
-internal record class IMUFrontRecord(
+internal record class IMURecordFront(
     int Week,
     long Time,
     Coordinates Coordinates,
@@ -91,6 +72,6 @@ internal record class IMUFrontRecord(
     Orientation Orientation,
     AbsoluteVelocity Velocity,
     AbsoluteAcceleration AbsoluteAcceleration,
-    Acceleration BodyAcceleration,
-    AngularVelocity AngularVelocity
+    Vector3D BodyAcceleration,
+    AngularVelocity3D AngularVelocity
 ) : IRecord;

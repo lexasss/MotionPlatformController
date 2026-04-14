@@ -6,7 +6,7 @@ namespace ValtraIMU.Feeders;
 /// Implements data feeding to MotionPlatform using ForceSeatMI.
 /// The IMU data can be obtained using <see cref="DataProviders.IMUFileCabin">.
 /// </summary>
-internal class IMUCabin(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileCabin dataProvider) : DataFeeder(mi, settings)
+internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileCabin dataProvider) : DataFeeder(mi, settings)
 {
     /// <summary>
     /// Implements the data conversion between IMU and MotionPlatform formats and sending logic.

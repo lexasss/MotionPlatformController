@@ -8,9 +8,9 @@ namespace ValtraIMU.Feeders;
 /// In MoveForward mode, simulates a vehicle accelerating to a certain speed, maintaining it, and then decelerating to a stop.
 /// In SwayForward mode, simulates a vehicle swaying up/down by generating pitch angular velocity data.
 /// </summary>
-internal class Dummy : DataFeeder
+internal class DummyFeeder : DataFeeder
 {
-    public Dummy(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
+    public DummyFeeder(ForceSeatMI_NET8 mi, Settings settings) : base(mi, settings)
     {
         var mode = settings.SimulationMode.Value;
 

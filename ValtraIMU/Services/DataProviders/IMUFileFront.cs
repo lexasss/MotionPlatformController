@@ -5,7 +5,7 @@ namespace ValtraIMU.DataProviders;
 /// <summary>
 /// Reads data from IMU+GNSS data log file collected with front-attached device
 /// </summary>
-internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.IMUFrontRecord>(filename, skipRate)
+internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.IMURecordFront>(filename, skipRate)
 {
     /// <summary>
     /// Creates an instance of <see cref="IMUFileFront"/> based on the settings.
@@ -31,7 +31,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
         return result;
     }
 
-    public override bool Get(long timestamp, out Models.IMUFrontRecord? record)
+    public override bool Get(long timestamp, out Models.IMURecordFront? record)
     {
         bool result;
         while (result = MoveNext())
@@ -45,12 +45,12 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
 
     #region Internal
 
-    protected override void SetInitialValues(Models.IMUFrontRecord record)
+    protected override void SetInitialValues(Models.IMURecordFront record)
     {
         _nextRecord = record with { Time = 0 };
     }
 
-    protected override Models.IMUFrontRecord? GetRecord(string? line = null)
+    protected override Models.IMURecordFront? GetRecord(string? line = null)
     {
         var skipped = new List<double[]>(Math.Max(1, _skipRate));
 
@@ -86,14 +86,14 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
                         values = Average(values, skipped);
                     }
 
-                    var imuRecord = new Models.IMUFrontRecord((int)values[0], (long)(1000*values[1]) - _startTime,
+                    var imuRecord = new Models.IMURecordFront((int)values[0], (long)(1000*values[1]) - _startTime,
                         new Models.Coordinates(values[2], values[3], values[4]),
                         new Models.Position(values[5], values[6]),
                         new Models.Orientation(values[7], values[8], values[9]),
                         new Models.AbsoluteVelocity(values[10], values[11], values[12]),
                         new Models.AbsoluteAcceleration(values[13], values[14], values[15]),
-                        new Models.Acceleration(values[16], values[17], values[18]),
-                        new Models.AngularVelocity(values[19], values[20], values[21])
+                        new Models.Vector3D(values[16], values[17], values[18]),
+                        new Models.AngularVelocity3D(values[19], values[20], values[21])
                     );
 
                     return imuRecord;

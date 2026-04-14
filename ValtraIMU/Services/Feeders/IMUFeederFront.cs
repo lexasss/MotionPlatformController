@@ -6,7 +6,7 @@ namespace ValtraIMU.Feeders;
 /// Implements data feeding to MotionPlatform using ForceSeatMI.
 /// The IMU+GNSS data can be obtained using <see cref="DataProviders.IMUFileFront">.
 /// </summary>
-internal class IMUFront(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileFront dataProvider) : DataFeeder(mi, settings)
+internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileFront dataProvider) : DataFeeder(mi, settings)
 {
     /// <summary>
     /// Implements the data conversion between IMU+GNSS and MotionPlatform formats and sending logic.

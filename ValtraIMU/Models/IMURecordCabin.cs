@@ -1,6 +1,6 @@
 ﻿namespace ValtraIMU.Models;
 
-internal record class Acceleration2(
+internal record class Acceleration(
     /// <summary>m/s^2</summary>
     double Lateral,
     /// <summary>m/s^2</summary>
@@ -10,14 +10,14 @@ internal record class Acceleration2(
 )
 {
     public double[] ToArray() => [Lateral, Longitudinal, Vertical];
-    public static Acceleration2 FromArray(double[] arr) => new(
+    public static Acceleration FromArray(double[] arr) => new(
         Lateral: arr[0],
         Longitudinal: arr[1],
         Vertical: arr[2]
     );
 };
 
-internal record class AngularVelocity2(
+internal record class AngularVelocity(
     /// <summary>degrees/s</summary>
     double Roll,
     /// <summary>degrees/s</summary>
@@ -26,7 +26,7 @@ internal record class AngularVelocity2(
     double Yaw
 ) : IAngular
 {
-    public AngularVelocity2 ToRadians() => new(
+    public AngularVelocity ToRadians() => new(
         Roll: IAngular.Deg2Rad(Roll),
         Pitch: IAngular.Deg2Rad(Pitch),
         Yaw: IAngular.Deg2Rad(Yaw)
@@ -40,20 +40,20 @@ internal record class FrontAxleSuspension(
     double Stroke       // %
 );
 
-internal record class IMUCabinRecord(
+internal record class IMURecordCabin(
     long Time,
 
-    Acceleration2 Acceleration,
-    AngularVelocity2 AngularVelocity,
+    Acceleration Acceleration,
+    AngularVelocity AngularVelocity,
     Orientation Orientation,    // Heading is always 0
-    Vector3D Body,   // g
-    Vector3D Cabin,  // g
+    Vector3D Body,      // g
+    Vector3D Cabin,     // g
 
     double CanTime,
     double GroundSpeed, // km/h
     double Rpm,
-    int Torque,     // %
-    Vector3D Seat,  // g
+    int Torque,         // %
+    Vector3D Seat,      // g
     FrontAxleSuspension FAS,
     double CabLeftRearSpringOffset, // mm
 

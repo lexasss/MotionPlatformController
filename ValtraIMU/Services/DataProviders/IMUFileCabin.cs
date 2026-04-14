@@ -5,7 +5,7 @@ namespace ValtraIMU.DataProviders;
 /// <summary>
 /// Reads data from IMU data log file collected with cabin-located device
 /// </summary>
-internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.IMUCabinRecord>(filename, skipRate)
+internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.IMURecordCabin>(filename, skipRate)
 {
     /// <summary>
     /// Creates an instance of <see cref="IMUFileCabin"/> based on the settings.
@@ -31,7 +31,7 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
         return result;
     }
 
-    public override bool Get(long timestamp, out Models.IMUCabinRecord? record)
+    public override bool Get(long timestamp, out Models.IMURecordCabin? record)
     {
         bool result;
         while (result = MoveNext())
@@ -46,12 +46,12 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
 
     #region Internal
 
-    protected override void SetInitialValues(Models.IMUCabinRecord record)
+    protected override void SetInitialValues(Models.IMURecordCabin record)
     {
         _nextRecord = record with { Time = 0 };
     }
 
-    protected override Models.IMUCabinRecord? GetRecord(string? line = null)
+    protected override Models.IMURecordCabin? GetRecord(string? line = null)
     {
         var skipped = new List<double[]>(Math.Max(1, _skipRate));
 
@@ -87,10 +87,10 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
                         values = Average(values, skipped);
                     }
 
-                    var imuRecord = new Models.IMUCabinRecord(
+                    var imuRecord = new Models.IMURecordCabin(
                         (long)(1000 * values[0]) - _startTime,
-                        new Models.Acceleration2(values[1], values[2], values[3]),
-                        new Models.AngularVelocity2(values[4], values[5], values[6]),
+                        new Models.Acceleration(values[1], values[2], values[3]),
+                        new Models.AngularVelocity(values[4], values[5], values[6]),
                         new Models.Orientation(values[8], values[7], 0),
                         new Models.Vector3D(values[9], values[10], values[11]),
                         new Models.Vector3D(values[12], values[13], values[14]),
