@@ -100,6 +100,19 @@ internal class Program : Command<Settings>
         await Task.Delay(3000);
         Console.WriteLine("done.");
 
+        Console.Write("Engaging the platform... ");
+        if (!mi.BeginMotionControl())
+        {
+            Console.WriteLine("Failed to start motion control!");
+            return Result.Failed;
+        }
+        else
+        {
+            mi.Park(FSMI_ParkMode.ToCenter);
+            await Task.Delay(10000);
+            Console.WriteLine("done.");
+        }
+
         Feeders.DataFeeder feeder;
         if (imuFrontProvider != null)
             feeder = new Feeders.IMUFeederFront(mi, settings, imuFrontProvider);
@@ -108,10 +121,14 @@ internal class Program : Command<Settings>
         else
             feeder = new Feeders.DummyFeeder(mi, settings);
 
-        return feeder.Run();
+        var result = feeder.Run();
 
-        //Console.Write("Parking the platform... ");
-        //mi.Park(FSMI_ParkMode.Normal);
-        //await Task.Delay(3000);
+        Console.Write("Parking the platform... ");
+        mi.EndMotionControl();
+
+        await Task.Delay(7000);
+        Console.WriteLine("done.");
+
+        return result;
     }
 }

@@ -25,12 +25,6 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     {
         var result = Result.Ok;
 
-        if (!_mi.BeginMotionControl())
-        { 
-            Console.WriteLine("Failed to start motion control!");
-            return Result.Failed;
-        }
-
         _ = TimeBeginPeriod(1);
 
         var printer = new Services.DisplayPrinter();
@@ -97,8 +91,6 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
         Console.WriteLine("Stopped.");
         Console.CursorVisible = true;
 
-        _mi.EndMotionControl();
-
         _ = TimeEndPeriod(1);
 
         return result;
@@ -154,7 +146,7 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
             if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
                 _telemetryBroadcaster.Send(ref _telemetry);
 
-            _mi.SendTelemetryACE(ref _telemetry);
+            result = _mi.SendTelemetryACE(ref _telemetry);
         }
 
         return result;
