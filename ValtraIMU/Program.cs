@@ -16,10 +16,16 @@ internal class Program : Command<Settings>
     static string ProfileName => "SDK - Vehicle Telemetry ACE";
 
     static ContextArgs _contextArgs = new();
+    static ForceSeatMI_NET8 _mi = new ();
 
     static void Main(string[] args)
     {
         bool hasFinished = false;
+
+        var task = EngagePlatform();
+        task.Wait();
+        if (!task.Result)
+            return;
 
         do
         {
@@ -35,6 +41,8 @@ internal class Program : Command<Settings>
             hasFinished = app.Run(args) != 0;
 
         } while (!hasFinished);
+
+        DisengagePlatform().Wait();
     }
 
     /// <summary>
@@ -62,17 +70,14 @@ internal class Program : Command<Settings>
         }
 
         // Run the feeder
-        Task<Result> task = Task.Run(async Task<Result>? () => await RunMotionPlatform(settings, imuFrontProvider, imuCabinProvider), cts);
-        task.Wait(cts);
+        var result = RunMotionPlatform(settings, imuFrontProvider, imuCabinProvider);
 
+        // memorize some session parameters to pass them to the next cycle if needed
         _contextArgs = new ContextArgs(settings.Amplitude, settings.IsDebugMode, settings.IsVerbose);
 
-        if (task.IsCanceled)
-            return -1;
-
-        if (task.Result != Result.Exiting)
+        if (result != Result.Exiting)
         {
-            var defaultAnswer = task.Result == Result.Stopped ? "y" : "n";
+            var defaultAnswer = result == Result.Stopped ? "y" : "n";
             var shouldRunAnotherTask = AnsiConsole.Ask("Run another task (y/n):", defaultAnswer).Equals("y", StringComparison.CurrentCultureIgnoreCase);
             return shouldRunAnotherTask ? 0 : -1;
         }
@@ -80,55 +85,67 @@ internal class Program : Command<Settings>
         return -1;
     }
 
-    static async Task<Result> RunMotionPlatform(Settings settings, DataProviders.IMUFileFront? imuFrontProvider, DataProviders.IMUFileCabin? imuCabinProvider)
-    {
-        using var mi = new ForceSeatMI_NET8();
+    // Internal
 
-        if (!mi.IsLoaded())
+    static async Task<bool> EngagePlatform()
+    {
+        _mi = new ForceSeatMI_NET8();
+
+        if (!_mi.IsLoaded())
         {
             Console.WriteLine("ForceSeatMI library has not been found! Please install ForceSeatPM.");
-            return Result.Failed;
+            return false;
         }
 
-        if (!mi.ActivateProfile(ProfileName))
+        if (!_mi.ActivateProfile(ProfileName))
         {
             Console.WriteLine($"Failed to activate the profile! Please make sure that the '{ProfileName}' profile is installed and active in ForceSeatPM.");
-            return Result.Failed;
+            return false;
         }
 
         Console.Write("Connecting to the MotionPlatform client... ");
         await Task.Delay(3000);
         Console.WriteLine("done.");
 
-        Console.Write("Engaging the platform... ");
-        if (!mi.BeginMotionControl())
+        //FSMI_PlatformInfo info = new();                                       // Is there a way to check that we use USB-simulator?
+        //_mi.GetPlatformInfoEx(ref info, (uint)Marshal.SizeOf(info), 500);     // We could then skip waiting for the lift-up
+
+        Console.Write("Lifting the platform up... ");
+        if (!_mi.BeginMotionControl())
         {
             Console.WriteLine("Failed to start motion control!");
-            return Result.Failed;
+            return false;
         }
         else
         {
-            mi.Park(FSMI_ParkMode.ToCenter);
+            _mi.Park(FSMI_ParkMode.ToCenter);
             await Task.Delay(10000);
             Console.WriteLine("done.");
+            await Task.Delay(1500);
         }
 
-        Feeders.DataFeeder feeder;
-        if (imuFrontProvider != null)
-            feeder = new Feeders.IMUFeederFront(mi, settings, imuFrontProvider);
-        else if (imuCabinProvider != null)
-            feeder = new Feeders.IMUFeederCabin(mi, settings, imuCabinProvider);
-        else
-            feeder = new Feeders.DummyFeeder(mi, settings);
+        return true;
+    }
 
-        var result = feeder.Run();
-
+    static async Task DisengagePlatform()
+    {
         Console.Write("Parking the platform... ");
-        mi.EndMotionControl();
+        _mi.EndMotionControl();
 
         await Task.Delay(7000);
         Console.WriteLine("done.");
+    }
 
-        return result;
+    static Result RunMotionPlatform(Settings settings, DataProviders.IMUFileFront? imuFrontProvider, DataProviders.IMUFileCabin? imuCabinProvider)
+    {
+        Feeders.DataFeeder feeder;
+        if (imuFrontProvider != null)
+            feeder = new Feeders.IMUFeederFront(_mi, settings, imuFrontProvider);
+        else if (imuCabinProvider != null)
+            feeder = new Feeders.IMUFeederCabin(_mi, settings, imuCabinProvider);
+        else
+            feeder = new Feeders.DummyFeeder(_mi, settings);
+
+        return feeder.Run();
     }
 }
