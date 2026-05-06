@@ -44,7 +44,7 @@ internal record class FrontAxleSuspension(
 );
 
 internal record class IMURecordCabin(
-    long Time,
+    long Timestamp,
 
     Acceleration Acceleration,
     AngularVelocity AngularVelocity,

@@ -36,7 +36,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
         bool result;
         while (result = MoveNext())
         {
-            if (Current.Time >= timestamp)
+            if (Current.Timestamp >= timestamp)
                 break;
         }
         record = result ? Current : null;
@@ -47,7 +47,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
 
     protected override void SetInitialValues(Models.IMURecordFront record)
     {
-        _nextRecord = record with { Time = 0 };
+        _nextRecord = record with { Timestamp = 0 };
     }
 
     protected override Models.IMURecordFront? GetRecord(string? line = null)

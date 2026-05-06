@@ -66,7 +66,7 @@ internal record class AngularVelocity3D(
 
 internal record class IMURecordFront(
     int Week,
-    long Time,
+    long Timestamp,
     Coordinates Coordinates,
     Position Position,
     Orientation Orientation,

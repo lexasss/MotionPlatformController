@@ -30,9 +30,21 @@ internal class DisplayPrinter
             Console.CursorTop = _cursorTop;
         }
 
-        Console.WriteLine("Status. Connected: {0}, Paused: {1}",
+        Console.WriteLine("Status. Connected: {0}, Paused: {1}, Ref-Run completed: {2}, Parked: {3}/{4}",
             info.isConnected != 0 ? "yes" : "no",
-            (info.state & FSMI_PlatformCurrentState.AnyPaused) != 0 ? "yes" : "no");
+            (info.state & FSMI_PlatformCurrentState.AnyPaused) != 0 ? "yes" : "no",
+            (info.state & FSMI_PlatformCurrentState.RefRunCompleted) != 0 ? "yes" : "no",
+            (info.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0 ? "yes" : "no",
+            (info.state >> 5) switch
+            {
+                1 => "Center (soft)",
+                2 => "Normal (soft)",
+                3 => "Transp (soft)",
+                4 => "Center",
+                5 => "Normal",
+                6 => "Transp",
+                _ => "-"
+            });
         Console.WriteLine("    Motor Position: {0,8}, {1,8}, {2,8}, {3,8}, {4,8}, {5,8}",
             info.actualMotor1_Position,
             info.actualMotor2_Position,

@@ -3,6 +3,7 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace ValtraIMU;
 
@@ -17,10 +18,14 @@ internal class Program : Command<Settings>
 
     static ContextArgs _contextArgs = new();
     static ForceSeatMI_NET8 _mi = new ();
+    static FSMI_PlatformInfo _platformInfo = new();
+    static bool _isSimulator = false;
 
     static void Main(string[] args)
     {
         bool hasFinished = false;
+
+        _platformInfo.structSize = (byte)Marshal.SizeOf(_platformInfo);
 
         var task = EngagePlatform();
         task.Wait();
@@ -103,22 +108,36 @@ internal class Program : Command<Settings>
             return false;
         }
 
-        Console.Write("Connecting to the MotionPlatform client... ");
-        await Task.Delay(3000);
-        Console.WriteLine("done.");
+        // _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
+        // _isSimulator = platformInfo.state == FSMI_PlatformCurrentState.ParkingCompleted;    // how to detect the simualtion device?
 
-        //FSMI_PlatformInfo info = new();                                       // Is there a way to check that we use USB-simulator?
-        //_mi.GetPlatformInfoEx(ref info, (uint)Marshal.SizeOf(info), 500);     // We could then skip waiting for the lift-up
+        if (_isSimulator)
+        {
+            Console.WriteLine("Connected to the MotionPlatform simulator.");
+        }
+        else
+        {
+            Console.Write("Connecting to the MotionPlatform client... ");
+            await Task.Delay(3000);
+            Console.WriteLine("done.");
+        }
 
-        Console.Write("Lifting the platform up... ");
         if (!_mi.BeginMotionControl())
         {
             Console.WriteLine("Failed to start motion control!");
             return false;
         }
-        else
+        else if (!_isSimulator)
         {
+            Console.Write("Centralizing the platform... ");
             _mi.Park(FSMI_ParkMode.ToCenter);
+
+            do
+            {
+                await Task.Delay(500);
+                _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
+            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
+
             await Task.Delay(10000);
             Console.WriteLine("done.");
             await Task.Delay(1500);
@@ -129,11 +148,23 @@ internal class Program : Command<Settings>
 
     static async Task DisengagePlatform()
     {
-        Console.Write("Parking the platform... ");
         _mi.EndMotionControl();
 
-        await Task.Delay(7000);
-        Console.WriteLine("done.");
+        if (!_isSimulator)
+        {
+            _mi.Park(FSMI_ParkMode.Normal);
+           
+            Console.Write("Parking the platform... ");
+
+            do
+            {
+                await Task.Delay(500);
+                _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
+            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
+
+            //await Task.Delay(6000);
+            Console.WriteLine("done.");
+        }
     }
 
     static Result RunMotionPlatform(Settings settings, DataProviders.IMUFileFront? imuFrontProvider, DataProviders.IMUFileCabin? imuCabinProvider)

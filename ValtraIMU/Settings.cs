@@ -2,6 +2,7 @@
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
+using System.Runtime;
 
 namespace ValtraIMU;
 
@@ -32,6 +33,11 @@ internal class Settings : CommandSettings
     [Description("Signal frequency in simulation mode")]
     [DefaultValue(0.5)]
     public double Frequency { get; set; }
+
+    [CommandOption("--sfx")]
+    [Description("If set, uses SFX to generate vibrations in simulation mode")]
+    [DefaultValue(false)]
+    public bool UseSFX { get; set; }
 
     [CommandOption("-s|--skip <NUMBER>")]
     [Description("Skip rate for IMU data")]
@@ -80,6 +86,14 @@ internal class Settings : CommandSettings
                     new SelectionPrompt<Axis>()
                         .Title("Select axis used in simulation mode:")
                         .AddChoices(Enum.GetValues<Axis>()));
+            }
+
+            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationHorizontal ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationVertical ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel)
+            {
+                UseSFX = AnsiConsole.Ask("Apply tremor (y/n):", "n").Equals("y", StringComparison.CurrentCultureIgnoreCase);
             }
         }
         else if (!File.Exists(Filename.Value))

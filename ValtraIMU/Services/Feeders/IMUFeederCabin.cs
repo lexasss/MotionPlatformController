@@ -25,7 +25,7 @@ internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         var orientAsRadians = record.Orientation.ToRadians();
 
         var acceleration = record.Acceleration; // Models.Acceleration2.FromArray(_accelerationFilter.Process(record.Acceleration.ToArray()));
-        if (_accelVertOffset == 0)  // looks like this is not needed as MotionPlanform ignores high values, but just in case (it is around "g") ...
+        if (_accelVertOffset == 0)  // looks like this is not needed as MotionPlatform ignores high values, but just in case (it is around "g") ...
             _accelVertOffset = acceleration.Vertical;
 
         var amplitude = _settings.Amplitude;
@@ -43,13 +43,13 @@ internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         if (_settings.IsVerbose && !_settings.IsDebugMode && _nextRecordTimestamp % 100 == 0)
         {
             Console.CursorLeft = 0;
-            Console.Write($"[{record.Time:F3}] ");
+            Console.Write($"[{record.Timestamp:F3}] ");
             Console.Write($"Vel: yaw {angVelAsRadians.Yaw,8:F4}, pitch {angVelAsRadians.Pitch,8:F4}, roll {angVelAsRadians.Roll,8:F4} | ");
             Console.Write($"Acc: f {record.Acceleration.Longitudinal,8:F4}, u {record.Acceleration.Vertical,8:F4}, r {record.Acceleration.Lateral,8:F4} | ");
             Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
         }
 
-        _nextRecordTimestamp = record.Time;
+        _nextRecordTimestamp = record.Timestamp;
 
         return true;
     }

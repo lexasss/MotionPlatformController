@@ -12,8 +12,18 @@ namespace ValtraIMU.Feeders;
 /// </summary>
 /// <param name="mi">ForceSeatMI object</param>
 /// <param name="settings">settings object</param>
-internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
+internal abstract class DataFeeder
 {
+    public DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
+    {
+        _mi = mi;
+        _settings = settings;
+
+        _position.structSize = (byte)Marshal.SizeOf(_position);
+        _position.mask = FSMI_POS_BIT.STATE | FSMI_POS_BIT.POSITION | FSMI_POS_BIT.MAX_SPEED;
+        _position.maxSpeed = 65535;
+    }
+
     /// <summary>
     /// Starts and manages the main simulation loop: the MP control, periodic data transmission,
     /// MP status display, and graceful shutdown upon user request.
@@ -98,12 +108,17 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
 
     #region Shared with descendants
 
-    protected readonly Settings _settings = settings;
+    protected readonly Settings _settings;
 
     /// <summary>
     /// To be filled by descendants when calling <see cref="PrepareTelemetry"/>
     /// </summary>
     protected FSMI_TelemetryACE _telemetry = FSMI_TelemetryACE.Prepare();
+
+    /// <summary>
+    /// To be filled by descendants when calling <see cref="PrepareTelemetry"/>
+    /// </summary>
+    protected FSMI_TopTablePositionPhysical _position = new FSMI_TopTablePositionPhysical();
 
     /// <summary>
     /// Time in milliseconds relative to the start, to be set by descendants in <see cref="SendData">.
@@ -116,11 +131,13 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected abstract bool PrepareTelemetry();
 
+    protected virtual void PreparePosition() { }
+
     #endregion
 
     #region Internal
 
-    readonly ForceSeatMI_NET8 _mi = mi;
+    readonly ForceSeatMI_NET8 _mi;
     readonly Stopwatch _stopwatch = new();
     readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
@@ -141,15 +158,52 @@ internal abstract class DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     private bool SendData()
     {
         var result = PrepareTelemetry();
-        if (result)
-        {
-            if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
-                _telemetryBroadcaster.Send(ref _telemetry);
+        if (!result)
+            return result;
 
-            result = _mi.SendTelemetryACE(ref _telemetry);
+        if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
+            _telemetryBroadcaster.Send(ref _telemetry);
+
+        if (!_settings.SimulationMode.IsSet)    // playback using accelerometer
+        {
+            PreparePosition();
+            result = _mi.SendTopTablePosPhy(ref _position);  // this does not work... fallback to telemetry
+            //result = _mi.SendTelemetryACE(ref _telemetry);
+        }
+        else
+        {
+            bool isSineSignal = _settings.SimulationMode.Value == SimulationMode.SineAcceleration ||
+                _settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationHorizontal ||
+                _settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationVertical ||
+                _settings.SimulationMode.Value == SimulationMode.SineWaveAccel;
+
+            if (isSineSignal && _settings.UseSFX)
+            {
+                var (sfx, audio, sbt) = CreateAdditionalData();
+                result = _mi.SendTelemetryACE3(ref _telemetry, ref sfx, ref audio, ref sbt);
+            }
+            else
+            {
+                result = _mi.SendTelemetryACE(ref _telemetry);
+            }
         }
 
         return result;
+    }
+
+    private static (FSMI_SFX, FSMI_TactileAudioBasedFeedbackEffects, FSMI_SbtData) CreateAdditionalData()
+    {
+        var sfx = FSMI_SFX.Prepare();
+        sfx.effectsCount = 1;
+        sfx.effects[0].type = (byte)FSMI_SFX_EffectType.SinusLevel2;
+        sfx.effects[0].area = (FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight);
+        sfx.effects[0].amplitude = 0.1f;
+        sfx.effects[0].frequency = 20;
+
+        var audio = FSMI_TactileAudioBasedFeedbackEffects.Prepare();
+        var sbt = FSMI_SbtData.Prepare();       // seat belt tensioner
+
+        return (sfx, audio, sbt);
     }
 
     private KeyHandlerResult HandleKeyPress()

@@ -36,7 +36,7 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
         bool result;
         while (result = MoveNext())
         {
-            if (Current.Time >= timestamp)
+            if (Current.Timestamp >= timestamp)
                 break;
         }
         record = result ? Current : null;
@@ -48,7 +48,7 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
 
     protected override void SetInitialValues(Models.IMURecordCabin record)
     {
-        _nextRecord = record with { Time = 0 };
+        _nextRecord = record with { Timestamp = 0 };
     }
 
     protected override Models.IMURecordCabin? GetRecord(string? line = null)

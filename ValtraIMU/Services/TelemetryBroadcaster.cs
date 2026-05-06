@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace ValtraIMU.Services;
 
+/// <summary>
+/// Broadcasts the telemetry.
+/// Only MoSiCo consumes the data currently.
+/// </summary>
 internal class TelemetryBroadcaster
 {
     public TelemetryBroadcaster()

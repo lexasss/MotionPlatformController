@@ -25,7 +25,7 @@ internal abstract class IMUFile<T> : IDataProvider<T> where T : Models.IRecord
                 _nextRecord = GetRecord(line);
                 if (_nextRecord != null)
                 {
-                    _startTime = _nextRecord.Time;
+                    _startTime = _nextRecord.Timestamp;
                     SetInitialValues(_nextRecord);
                     break;
                 }
