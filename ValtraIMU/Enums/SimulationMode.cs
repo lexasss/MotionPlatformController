@@ -6,9 +6,9 @@ namespace ValtraIMU;
 internal enum SimulationMode
 {
     /// <summary>
-    /// Simple sine wave simulation.
+    /// Sine acceleration on a defined axis.
     /// </summary>
-    SineWaveAccel,
+    SineAcceleration,
     /// <summary>
     /// A pusle imitating moving forward, moving forward for a short time, then stopping.
     /// </summary>
@@ -22,15 +22,11 @@ internal enum SimulationMode
     /// </summary>
     CircluarSway,
     /// <summary>
-    /// Sine acceleration on a defined axis.
-    /// </summary>
-    SineAcceleration,
-    /// <summary>
     /// Sine acceleration on two axes (horizontal), with Pi/2 phase difference.
     /// </summary>
-    CircluarSineAccelerationHorizontal,
+    SideSwayPlusForward,
     /// <summary>
     /// Sine acceleration on two axes (vertical), with Pi/2 phase difference.
     /// </summary>
-    CircluarSineAccelerationVertical,
+    SideSwayPlusUpward,
 }

@@ -53,8 +53,10 @@ internal class TelemetryBroadcaster
         _client.Send(bytes.ToArray(), bytes.Length, _endPoint);
     }
 
-    // Internal
+    #region Internal
 
     readonly UdpClient _client;
     readonly IPEndPoint _endPoint;
+
+    #endregion
 }

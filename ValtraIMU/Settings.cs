@@ -77,33 +77,50 @@ internal class Settings : CommandSettings
                     .Title("Select simulation mode:")
                     .AddChoices(Enum.GetValues<SimulationMode>()));
 
-            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel ||
+            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
                 SimulationMode.Value == ValtraIMU.SimulationMode.MovePulse ||
-                SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration)
+                SimulationMode.Value == ValtraIMU.SimulationMode.Sway)
             {
                 Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
                     new SelectionPrompt<Axis>()
                         .Title("Select axis used in simulation mode:")
                         .AddChoices(Enum.GetValues<Axis>()));
             }
+
+            string units = SimulationMode.Value switch
+            {
+                ValtraIMU.SimulationMode.SineAcceleration => "m/s²",
+                ValtraIMU.SimulationMode.MovePulse => "m/s",
+                ValtraIMU.SimulationMode.Sway or ValtraIMU.SimulationMode.CircluarSway => "deg",
+                ValtraIMU.SimulationMode.SideSwayPlusForward or ValtraIMU.SimulationMode.SideSwayPlusUpward => "m/s²",
+                _ => "-"
+            };
+            Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask($"Amplitude ({units}):", context?.Amplitude ?? Amplitude);
+
+            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration || 
+                SimulationMode.Value == ValtraIMU.SimulationMode.Sway ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSway ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusForward ||
+                SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusUpward)
+            {
+                Frequency = Frequency != 0.5 ? Frequency : AnsiConsole.Ask("Frequency:", context?.Frequency ?? Frequency);
+            }
         }
         else if (!File.Exists(Filename.Value))
         {
             Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+            Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
         }
 
         IsDebugMode = context?.IsDebugMode ?? IsDebugMode;
         IsVerbose = context?.IsVerbose ?? IsVerbose;
 
-        Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
-
         if (Filename.Value == SIM_LABEL &&
             SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
-            SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationHorizontal ||
-            SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationVertical ||
-            SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel)
+            SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusForward ||
+            SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusUpward)
         {
-            SFX = SFX != null ? SFX : AnsiConsole.Ask<string?>("Tremor parameters (ampl[,freq[,fr,fl,rr,rl]]):", null);
+            SFX = SFX != null ? SFX : AnsiConsole.Ask<string?>("Tremor parameters (ampl[[,freq[[,fr,fl,rr,rl]]]]):", null);
         }
 
         BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(

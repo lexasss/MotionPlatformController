@@ -14,7 +14,7 @@ internal class DummyFeeder : DataFeeder
     {
         var mode = settings.SimulationMode.Value;
 
-        if (mode == SimulationMode.SineWaveAccel)
+        if (mode == SimulationMode.SineAcceleration)
         {
             _dataProviders = [new DataProviders.Sinus(settings)];
             _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
@@ -30,7 +30,7 @@ internal class DummyFeeder : DataFeeder
             var sinusProvider = new DataProviders.Sinus(settings)
             {
                 Amplitude = settings.Amplitude,  // rad
-                Frequency = 0.5
+                Frequency = settings.Frequency
             };
 
             if (_settings.Axis.Value == Axis.Right)
@@ -44,21 +44,16 @@ internal class DummyFeeder : DataFeeder
         {
             _telemetryConfiger = new TelemetryConfigers.Orientation();
             _dataProviders = [
-                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 }, 
-                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5, InitialPhase = Math.PI / 2 }
+                new DataProviders.Sinus(settings), 
+                new DataProviders.Sinus(settings) { InitialPhase = Math.PI / 2 }
             ];
         }
-        else if (mode == SimulationMode.SineAcceleration)
-        {
-            _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
-            _dataProviders = [new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 }];
-        }
-        else if (mode == SimulationMode.CircluarSineAccelerationHorizontal || mode == SimulationMode.CircluarSineAccelerationVertical)
+        else if (mode == SimulationMode.SideSwayPlusForward || mode == SimulationMode.SideSwayPlusUpward)
         {
             _telemetryConfiger = new TelemetryConfigers.LinearAcceleration();
             _dataProviders = [
-                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5 },
-                new DataProviders.Sinus(settings) { Amplitude = settings.Amplitude, Frequency = 0.5, InitialPhase = Math.PI / 2 }
+                new DataProviders.Sinus(settings),
+                new DataProviders.Sinus(settings) { InitialPhase = Math.PI / 2 }
             ];
         }
         else

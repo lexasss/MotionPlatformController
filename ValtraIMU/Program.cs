@@ -12,17 +12,26 @@ namespace ValtraIMU;
 /// </summary>
 internal class Program : Command<Settings>
 {
-    public record class ContextArgs(double? Amplitude = null, bool? IsDebugMode = null, bool? IsVerbose = null);
+    public record class ContextArgs(
+        double? Amplitude = null,
+        double? Frequency = null,
+        bool? IsDebugMode = null,
+        bool? IsVerbose = null)
+    {
+        public static ContextArgs FromSettings(Settings settings) =>
+            new(settings.Amplitude, settings.Frequency, settings.IsDebugMode, settings.IsVerbose);
+    }
 
     static string[] Profiles => [
         "SDK - Vehicle Telemetry ACE",
         "SDK - Positioning"
     ];
 
+    static readonly bool _isSimulator = false;
+
     static ContextArgs _contextArgs = new();
     static ForceSeatMI_NET8 _mi = new ();
     static FSMI_PlatformInfo _platformInfo = new();
-    static bool _isSimulator = false;
     static bool _isPositioningSDK = false;
 
     static void Main(string[] args)
@@ -82,7 +91,7 @@ internal class Program : Command<Settings>
         var result = RunMotionPlatform(settings, imuFrontProvider, imuCabinProvider);
 
         // memorize some session parameters to pass them to the next cycle if needed
-        _contextArgs = new ContextArgs(settings.Amplitude, settings.IsDebugMode, settings.IsVerbose);
+        _contextArgs = ContextArgs.FromSettings(settings);
 
         if (result != Result.Exiting)
         {
@@ -94,7 +103,7 @@ internal class Program : Command<Settings>
         return -1;
     }
 
-    // Internal
+    #region Internal
 
     static async Task<bool> EngagePlatform()
     {
@@ -118,9 +127,6 @@ internal class Program : Command<Settings>
             return false;
         }
 
-        // _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
-        // _isSimulator = platformInfo.state == FSMI_PlatformCurrentState.ParkingCompleted;    // how to detect the simualtion device?
-
         if (_isSimulator)
         {
             Console.WriteLine("Connected to the MotionPlatform simulator.");
@@ -128,7 +134,7 @@ internal class Program : Command<Settings>
         else
         {
             Console.Write("Connecting to the MotionPlatform client... ");
-            await Task.Delay(3000);     // manual suggests having this delay...
+            await Task.Delay(3000);     // the manual suggests having this delay...
             Console.WriteLine("done.");
         }
 
@@ -148,9 +154,10 @@ internal class Program : Command<Settings>
                 await Task.Delay(500);
                 _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
                 maxTime -= 500;
-            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0 && maxTime >= 0);
+            } while (((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0
+                   || (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) == 0)
+                   && maxTime >= 0);
 
-            //await Task.Delay(10000);
             Console.WriteLine("done.");
             await Task.Delay(1500);
         }
@@ -160,23 +167,25 @@ internal class Program : Command<Settings>
 
     static async Task DisengagePlatform()
     {
-        _mi.EndMotionControl();
-
         if (!_isSimulator)
         {
-            _mi.Park(FSMI_ParkMode.Normal);
-           
-            Console.Write("Parking the platform... ");
+            bool result = _mi.Park(FSMI_ParkMode.Normal);
 
-            do
+            if (result)
             {
-                await Task.Delay(500);
-                _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
-            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
+                Console.Write("Parking the platform... ");
 
-            //await Task.Delay(6000);
-            Console.WriteLine("done.");
+                do
+                {
+                    await Task.Delay(500);
+                    _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
+                } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
+
+                Console.WriteLine("done.");
+            }
         }
+
+        _mi.EndMotionControl();
     }
 
     static Result RunMotionPlatform(Settings settings, DataProviders.IMUFileFront? imuFrontProvider, DataProviders.IMUFileCabin? imuCabinProvider)
@@ -193,4 +202,6 @@ internal class Program : Command<Settings>
 
         return feeder.Run();
     }
+
+    #endregion
 }

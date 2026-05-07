@@ -169,7 +169,7 @@ internal abstract class DataFeeder
     readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
     readonly bool _useSFX = false;
-    readonly float _sfxAmplitude = 0.1f;
+    readonly float _sfxAmplitude = 0.001f;
     readonly byte _sfxFrequency = 20;
     readonly ushort _sfxArea = FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight;
 

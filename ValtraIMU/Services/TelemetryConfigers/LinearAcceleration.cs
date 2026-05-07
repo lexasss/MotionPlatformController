@@ -31,12 +31,12 @@ internal class LinearAcceleration : ITelemetryConfiger
         }
         else if (values.Length == 2)
         {
-            if (settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationHorizontal)
+            if (settings.SimulationMode.Value == SimulationMode.SideSwayPlusForward)
             {
                 linAccel.right = (float)values[0];
                 linAccel.forward = (float)values[1];
             }
-            else if (settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationVertical)
+            else if (settings.SimulationMode.Value == SimulationMode.SideSwayPlusUpward)
             {
                 linAccel.right = (float)values[0];
                 linAccel.upward = (float)values[1];

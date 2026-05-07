@@ -6,13 +6,15 @@ internal class Orientation : ITelemetryConfiger
 {
     public void Config(ref FSMI_TelemetryACE telemetry, Settings settings, double[] value)
     {
+        var pitch = value[0] / 180 * Math.PI;
+        var roll = value[1] / 180 * Math.PI;
         if (settings.IsVerbose && !settings.IsDebugMode)
         {
             Console.CursorLeft = 0;
-            Console.Write($"BodyPitch: {value[0]:F4} rad, BodyRoll: {value[1]:F4} rad");
+            Console.Write($"BodyPitch: {pitch:F2} deg, BodyRoll: {roll:F2} deg");
         }
 
-        telemetry.bodyPitch = (float)value[0];
-        telemetry.bodyRoll = (float)value[1];
+        telemetry.bodyPitch = (float)pitch;
+        telemetry.bodyRoll = (float)roll;
     }
 }

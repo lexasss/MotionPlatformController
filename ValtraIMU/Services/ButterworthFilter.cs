@@ -90,7 +90,7 @@ internal class ButterworthFilter
         return result;
     }
 
-    // Internal
+    #region Internal
 
     readonly int _size;
     readonly IIR_Butterworth_CS_Library.IIR_Butterworth _filter;
@@ -147,4 +147,6 @@ internal class ButterworthFilter
             System.Diagnostics.Debug.WriteLine("Filter is NOT stable");
         }
     }
+
+    #endregion
 }
