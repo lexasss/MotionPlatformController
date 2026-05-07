@@ -24,6 +24,28 @@ internal abstract class DataFeeder
         _position.structSize = (byte)Marshal.SizeOf(_position);
         _position.mask = FSMI_POS_BIT.STATE | FSMI_POS_BIT.POSITION | FSMI_POS_BIT.MAX_SPEED;
         _position.maxSpeed = 65535;
+
+        if (settings.SFX != null)
+        {
+            _useSFX = true;
+            var p = settings.SFX.Trim().Split(',');
+            if (p.Length > 0 && float.TryParse(p[0], out var ampl))
+                _sfxAmplitude = ampl;
+            if (p.Length > 1 && byte.TryParse(p[1], out var freq))
+                _sfxFrequency = freq;
+            if (p.Length > 2)
+            {
+                _sfxArea = 0;
+                if (p.Contains("fr"))
+                    _sfxArea = FSMI_SFX_AreaFlags.FrontRight;
+                if (p.Contains("fl"))
+                    _sfxArea = FSMI_SFX_AreaFlags.FrontLeft;
+                if (p.Contains("rr"))
+                    _sfxArea = FSMI_SFX_AreaFlags.RearRight;
+                if (p.Contains("rl"))
+                    _sfxArea = FSMI_SFX_AreaFlags.RearLeft;
+            }
+        }
     }
 
     /// <summary>
@@ -120,7 +142,7 @@ internal abstract class DataFeeder
     /// <summary>
     /// To be filled by descendants when calling <see cref="PreparePosition"/>
     /// </summary>
-    protected FSMI_TopTablePositionPhysical _position = new FSMI_TopTablePositionPhysical();
+    protected FSMI_TopTablePositionPhysical _position = new();
 
     /// <summary>
     /// Time in milliseconds relative to the start, to be set by descendants in <see cref="SendData">.
@@ -145,6 +167,11 @@ internal abstract class DataFeeder
     readonly ForceSeatMI_NET8 _mi;
     readonly Stopwatch _stopwatch = new();
     readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
+
+    readonly bool _useSFX = false;
+    readonly float _sfxAmplitude = 0.1f;
+    readonly byte _sfxFrequency = 20;
+    readonly ushort _sfxArea = FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight;
 
     static FSMI_PlatformInfo _platformInfo = new();
     readonly uint _piSize = (uint)Marshal.SizeOf(_platformInfo);
@@ -176,12 +203,7 @@ internal abstract class DataFeeder
         }
         else
         {
-            bool isSineSignal = _settings.SimulationMode.Value == SimulationMode.SineAcceleration ||
-                _settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationHorizontal ||
-                _settings.SimulationMode.Value == SimulationMode.CircluarSineAccelerationVertical ||
-                _settings.SimulationMode.Value == SimulationMode.SineWaveAccel;
-
-            if (isSineSignal && _settings.UseSFX)
+            if (_useSFX)
             {
                 var (sfx, audio, sbt) = CreateAdditionalData();
                 result = _mi.SendTelemetryACE3(ref _telemetry, ref sfx, ref audio, ref sbt);
@@ -195,14 +217,14 @@ internal abstract class DataFeeder
         return result;
     }
 
-    private static (FSMI_SFX, FSMI_TactileAudioBasedFeedbackEffects, FSMI_SbtData) CreateAdditionalData()
+    private (FSMI_SFX, FSMI_TactileAudioBasedFeedbackEffects, FSMI_SbtData) CreateAdditionalData()
     {
         var sfx = FSMI_SFX.Prepare();
         sfx.effectsCount = 1;
         sfx.effects[0].type = (byte)FSMI_SFX_EffectType.SinusLevel2;
-        sfx.effects[0].area = (FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight);
-        sfx.effects[0].amplitude = 0.1f;
-        sfx.effects[0].frequency = 20;
+        sfx.effects[0].area = _sfxArea;
+        sfx.effects[0].amplitude = _sfxAmplitude;
+        sfx.effects[0].frequency = _sfxFrequency;
 
         var audio = FSMI_TactileAudioBasedFeedbackEffects.Prepare();
 

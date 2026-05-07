@@ -2,7 +2,6 @@
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
-using System.Runtime;
 
 namespace ValtraIMU;
 
@@ -35,9 +34,9 @@ internal class Settings : CommandSettings
     public double Frequency { get; set; }
 
     [CommandOption("--sfx")]
-    [Description("If set, uses SFX to generate vibrations in simulation mode")]
-    [DefaultValue(false)]
-    public bool UseSFX { get; set; }
+    [Description("SFX amplitude (float), frequency (byte) and optionally areas (fr,fl,rr,rl) separated by comma")]
+    [DefaultValue(null)]
+    public string? SFX { get; set; }
 
     [CommandOption("-s|--skip <NUMBER>")]
     [Description("Skip rate for IMU data")]
@@ -87,14 +86,6 @@ internal class Settings : CommandSettings
                         .Title("Select axis used in simulation mode:")
                         .AddChoices(Enum.GetValues<Axis>()));
             }
-
-            if (SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
-                SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationHorizontal ||
-                SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationVertical ||
-                SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel)
-            {
-                UseSFX = AnsiConsole.Ask("Apply tremor (y/n):", "n").Equals("y", StringComparison.CurrentCultureIgnoreCase);
-            }
         }
         else if (!File.Exists(Filename.Value))
         {
@@ -105,6 +96,15 @@ internal class Settings : CommandSettings
         IsVerbose = context?.IsVerbose ?? IsVerbose;
 
         Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
+
+        if (Filename.Value == SIM_LABEL &&
+            SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
+            SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationHorizontal ||
+            SimulationMode.Value == ValtraIMU.SimulationMode.CircluarSineAccelerationVertical ||
+            SimulationMode.Value == ValtraIMU.SimulationMode.SineWaveAccel)
+        {
+            SFX = SFX != null ? SFX : AnsiConsole.Ask<string?>("Tremor parameters (ampl[,freq[,fr,fl,rr,rl]]):", null);
+        }
 
         BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(
             new SelectionPrompt<BroadcastDataType>()
