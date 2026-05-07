@@ -100,7 +100,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
                 }
             }
 
-            line = null;
+            line = null;    // to force reading the next line in the next cycle
         }
 
         return null;

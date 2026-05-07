@@ -14,6 +14,8 @@ namespace ValtraIMU.Feeders;
 /// <param name="settings">settings object</param>
 internal abstract class DataFeeder
 {
+    public bool UsePositionInsteadOfTelemetry { get; set; } = false;
+
     public DataFeeder(ForceSeatMI_NET8 mi, Settings settings)
     {
         _mi = mi;
@@ -116,7 +118,7 @@ internal abstract class DataFeeder
     protected FSMI_TelemetryACE _telemetry = FSMI_TelemetryACE.Prepare();
 
     /// <summary>
-    /// To be filled by descendants when calling <see cref="PrepareTelemetry"/>
+    /// To be filled by descendants when calling <see cref="PreparePosition"/>
     /// </summary>
     protected FSMI_TopTablePositionPhysical _position = new FSMI_TopTablePositionPhysical();
 
@@ -131,6 +133,9 @@ internal abstract class DataFeeder
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected abstract bool PrepareTelemetry();
 
+    /// <summary>
+    /// To be implemented by descendants to fill <see cref="_position"/>. Notice that <see cref="PrepareTelemetry"> will be called anyway.
+    /// </summary>
     protected virtual void PreparePosition() { }
 
     #endregion
@@ -164,11 +169,10 @@ internal abstract class DataFeeder
         if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
             _telemetryBroadcaster.Send(ref _telemetry);
 
-        if (!_settings.SimulationMode.IsSet)    // playback using accelerometer
+        if (UsePositionInsteadOfTelemetry)
         {
             PreparePosition();
-            result = _mi.SendTopTablePosPhy(ref _position);  // this does not work... fallback to telemetry
-            //result = _mi.SendTelemetryACE(ref _telemetry);
+            result = _mi.SendTopTablePosPhy(ref _position);
         }
         else
         {
@@ -201,7 +205,9 @@ internal abstract class DataFeeder
         sfx.effects[0].frequency = 20;
 
         var audio = FSMI_TactileAudioBasedFeedbackEffects.Prepare();
-        var sbt = FSMI_SbtData.Prepare();       // seat belt tensioner
+
+        // seat belt tensioner
+        var sbt = FSMI_SbtData.Prepare();
 
         return (sfx, audio, sbt);
     }

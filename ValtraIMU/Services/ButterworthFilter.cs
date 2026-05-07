@@ -44,6 +44,9 @@ internal class ButterworthFilter
     /// adapted for real-time processing of single values
     public double[] Process(double[] values)
     {
+        if (_prev.Length != values.Length)
+            return values;
+
         double[] result = new double[values.Length];
 
         for (int i = 0; i < values.Length; i++)

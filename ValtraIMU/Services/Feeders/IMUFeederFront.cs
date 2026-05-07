@@ -1,5 +1,4 @@
 ﻿using MotionSystems;
-using System.Diagnostics;
 
 namespace ValtraIMU.Feeders;
 
@@ -53,32 +52,23 @@ internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         return true;
     }
 
-    Stopwatch stopWatch = Stopwatch.StartNew();
-
     protected override void PreparePosition()
     {
-        var record = _dataProvider.Current; /// no need to move forward, as <see href="PrepareTelemetry"/> is call always prior to this method
+        var record = _dataProvider.Current; /// no need to move forward, as <see cref="PrepareTelemetry"/> is called always prior to this method
 
-        if (_msTimestamp == 0)
-        {
-            _msTimestamp = record.Timestamp;
-            return;
-        }
+        // Implements recommended position calculation, as in ForceSeatMI.pdf, chapter 8.1
 
-        var amplitude = _settings.Amplitude;
-
-        var ts = record.Timestamp;
-        var intervalSeconds = 0.001 * (ts - _msTimestamp);
-        _msTimestamp = ts;
+        var dt = 0.001 * (record.Timestamp - _prevTimestamp);   // in seconds
+        _prevTimestamp = record.Timestamp;
 
         double[] velocities = [
-            amplitude * record.BodyAcceleration.X * intervalSeconds,
-            amplitude * record.BodyAcceleration.Y * intervalSeconds,
-            amplitude * record.BodyAcceleration.Z * intervalSeconds,
+            _settings.Amplitude * record.BodyAcceleration.X * dt,
+            _settings.Amplitude * record.BodyAcceleration.Y * dt,
+            _settings.Amplitude * record.BodyAcceleration.Z * dt,
         ];
-        _swayPos += _swayVel * intervalSeconds + velocities[0] * intervalSeconds * 0.5;
-        _surgePos += _surgeVel * intervalSeconds + velocities[1] * intervalSeconds * 0.5;
-        _heavePos += _heaveVel * intervalSeconds + velocities[2] * intervalSeconds * 0.5;
+        _swayPos += _swayVel * dt + velocities[0] * dt * 0.5;
+        _surgePos += _surgeVel * dt + velocities[1] * dt * 0.5;
+        _heavePos += _heaveVel * dt + velocities[2] * dt * 0.5;
 
         _swayVel += velocities[0];
         _surgeVel += velocities[1];
@@ -92,24 +82,6 @@ internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProvid
 
         _position.pitch = _telemetry.bodyPitch;
         _position.roll = _telemetry.bodyRoll;
-
-        static double CalcSin(double t_ms, double amplitude, double hz)
-        {
-            return amplitude * Math.Sin((2.0 / 1000.0 * Math.PI) * hz * t_ms);
-        }
-
-        static double Deg2Rad(double deg)
-        {
-            return deg * Math.PI / 180;
-        }
-
-        _position.pitch = 0;
-        _position.roll = (float)CalcSin(stopWatch.ElapsedMilliseconds, Deg2Rad(5), 0.5/*hz*/);
-        _position.yaw = 0;
-        _position.sway = 0;
-        _position.surge = 0;
-        _position.heave = 0;
-
 
         if (_settings.IsVerbose && !_settings.IsDebugMode && _nextRecordTimestamp % 100 == 0)
         {
@@ -126,7 +98,7 @@ internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProvid
 
     readonly DataProviders.IMUFileFront _dataProvider = dataProvider;
 
-    long _msTimestamp = 0;
+    long _prevTimestamp = 0;
 
     double _swayPos = 0;
     double _surgePos = 0;

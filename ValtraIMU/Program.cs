@@ -14,12 +14,16 @@ internal class Program : Command<Settings>
 {
     public record class ContextArgs(double? Amplitude = null, bool? IsDebugMode = null, bool? IsVerbose = null);
 
-    static string ProfileName => "SDK - Vehicle Telemetry ACE";
+    static string[] Profiles => [
+        "SDK - Vehicle Telemetry ACE",
+        "SDK - Positioning"
+    ];
 
     static ContextArgs _contextArgs = new();
     static ForceSeatMI_NET8 _mi = new ();
     static FSMI_PlatformInfo _platformInfo = new();
     static bool _isSimulator = false;
+    static bool _isPositioningSDK = false;
 
     static void Main(string[] args)
     {
@@ -102,9 +106,15 @@ internal class Program : Command<Settings>
             return false;
         }
 
-        if (!_mi.ActivateProfile(ProfileName))
+        var profile = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select ForceSeatPM profile:")
+                    .AddChoices(Profiles));
+        _isPositioningSDK = profile == Profiles[1];
+
+        if (!_mi.ActivateProfile(profile))
         {
-            Console.WriteLine($"Failed to activate the profile! Please make sure that the '{ProfileName}' profile is installed and active in ForceSeatPM.");
+            Console.WriteLine($"Failed to activate the profile. Please make sure that the '{profile}' profile is installed and active in ForceSeatPM.");
             return false;
         }
 
@@ -118,7 +128,7 @@ internal class Program : Command<Settings>
         else
         {
             Console.Write("Connecting to the MotionPlatform client... ");
-            await Task.Delay(3000);
+            await Task.Delay(3000);     // manual suggests having this delay...
             Console.WriteLine("done.");
         }
 
@@ -132,13 +142,15 @@ internal class Program : Command<Settings>
             Console.Write("Centralizing the platform... ");
             _mi.Park(FSMI_ParkMode.ToCenter);
 
+            int maxTime = 10000;
             do
             {
                 await Task.Delay(500);
                 _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
-            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
+                maxTime -= 500;
+            } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0 && maxTime >= 0);
 
-            await Task.Delay(10000);
+            //await Task.Delay(10000);
             Console.WriteLine("done.");
             await Task.Delay(1500);
         }
@@ -176,6 +188,8 @@ internal class Program : Command<Settings>
             feeder = new Feeders.IMUFeederCabin(_mi, settings, imuCabinProvider);
         else
             feeder = new Feeders.DummyFeeder(_mi, settings);
+
+        feeder.UsePositionInsteadOfTelemetry = _isPositioningSDK;
 
         return feeder.Run();
     }
