@@ -40,9 +40,7 @@ internal class Program : Command<Settings>
 
         Settings.CanBroadcastData = AnsiConsole.Confirm("Is data broadcasting enabled?", false);
 
-        var task = EngagePlatform();
-        task.Wait();
-        if (!task.Result)
+        if (!EngagePlatform())
             return;
 
         bool mustClear = false;
@@ -63,7 +61,7 @@ internal class Program : Command<Settings>
 
         } while (!hasFinished);
 
-        DisengagePlatform().Wait();
+        DisengagePlatform();
     }
 
     /// <summary>
@@ -103,7 +101,7 @@ internal class Program : Command<Settings>
 
     #region Internal
 
-    static async Task<bool> EngagePlatform()
+    static bool EngagePlatform()
     {
         _mi = new ForceSeatMI_NET8();
 
@@ -126,11 +124,18 @@ internal class Program : Command<Settings>
             return false;
         }
 
+        bool isPlatformConnected = false;
+        AnsiConsole.Status().Start("Connecting to the MotionPlatform client... ", ctx =>
+        {
+            var task = WaitForState(10000, state => (state & FSMI_PlatformCurrentState.RefRunCompleted) != 0);
+            task.Wait();
+            isPlatformConnected = task.Result;
+        });
         AnsiConsole.Write("Connecting to the MotionPlatform client... ");
-        bool isPlatformConnected = await WaitForState(10000, state => (state & FSMI_PlatformCurrentState.RefRunCompleted) != 0);
+        
         if (!isPlatformConnected)
         {
-            AnsiConsole.MarkupLine("[red]failed[/]\nThe platform is off. Exiting... ");
+            AnsiConsole.MarkupLine("[red]failed[/].\nExiting... ");
             return false;
         }
 
@@ -143,38 +148,40 @@ internal class Program : Command<Settings>
         }
         else
         {
-            AnsiConsole.Write("Centralizing the platform... ");
             _mi.Park(FSMI_ParkMode.ToCenter);
 
-            if (await WaitForState(10000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0
-                                            && (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) != 0))
+            bool hasCentralized = false;
+            AnsiConsole.Status().Start("Centralizing the platform... ", ctx =>
             {
-                AnsiConsole.MarkupLine("[green]done[/].");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine("[orange]timeout[/].");
-            }
+                var task = WaitForState(10000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0
+                                            && (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) != 0);
+                task.Wait();
+                hasCentralized = task.Result;
+            });
+
+            AnsiConsole.Write($"Centralizing the platform... ");
+            AnsiConsole.MarkupLine(hasCentralized ? "[green]done[/]." : "[orange]timeout[/].");
         }
 
         return true;
     }
 
-    static async Task DisengagePlatform()
+    static void DisengagePlatform()
     {
         bool result = _mi.Park(FSMI_ParkMode.Normal);
 
         if (result)
         {
+            bool hasParked = false;
+            AnsiConsole.Status().Start("Parking the platform... ", ctx =>
+            {
+                var task = WaitForState(15000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0);
+                task.Wait();
+                hasParked = task.Result;
+            });
+
             AnsiConsole.Write("Parking the platform... ");
-            if (await WaitForState(15000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0))
-            {
-                AnsiConsole.MarkupLine("[green]done[/].");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine("[orange]timeout[/].");
-            }
+            AnsiConsole.MarkupLine(hasParked ? "[green]done[/]." : "[orange]timeout[/].");
         }
 
         _mi.EndMotionControl();
