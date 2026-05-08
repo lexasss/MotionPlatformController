@@ -27,8 +27,6 @@ internal class Program : Command<Settings>
         "SDK - Positioning"
     ];
 
-    static readonly bool _isSimulator = false;
-
     static ContextArgs _contextArgs = new();
     static ForceSeatMI_NET8 _mi = new ();
     static FSMI_PlatformInfo _platformInfo = new();
@@ -40,14 +38,18 @@ internal class Program : Command<Settings>
 
         _platformInfo.structSize = (byte)Marshal.SizeOf(_platformInfo);
 
+        Settings.CanBroadcastData = AnsiConsole.Confirm("Is data broadcasting enabled?", false);
+
         var task = EngagePlatform();
         task.Wait();
         if (!task.Result)
             return;
 
+        bool mustClear = false;
         do
         {
-            Console.Clear();
+            if (mustClear)
+                Console.Clear();
 
             var app = new CommandApp<Program>();
             app.WithData(_contextArgs);
@@ -57,6 +59,7 @@ internal class Program : Command<Settings>
                 config.SetApplicationName($"{Assembly.GetExecutingAssembly().FullName?.Split(',')[0]}.exe");
             });
             hasFinished = app.Run(args) != 0;
+            mustClear = true;
 
         } while (!hasFinished);
 
@@ -81,10 +84,6 @@ internal class Program : Command<Settings>
         if (imuFrontProvider == null)
         {
             imuCabinProvider = DataProviders.IMUFileCabin.Create(ref settings);
-            if (imuCabinProvider == null)
-            {
-                Console.WriteLine($"Simulation mode {settings.SimulationMode.Value}.");
-            }
         }
 
         // Run the feeder
@@ -95,8 +94,7 @@ internal class Program : Command<Settings>
 
         if (result != Result.Exiting)
         {
-            var defaultAnswer = result == Result.Stopped ? "y" : "n";
-            var shouldRunAnotherTask = AnsiConsole.Ask("Run another task (y/n):", defaultAnswer).Equals("y", StringComparison.CurrentCultureIgnoreCase);
+            var shouldRunAnotherTask = AnsiConsole.Confirm("Run another task?", result == Result.Stopped);
             return shouldRunAnotherTask ? 0 : -1;
         }
 
@@ -111,7 +109,7 @@ internal class Program : Command<Settings>
 
         if (!_mi.IsLoaded())
         {
-            Console.WriteLine("ForceSeatMI library has not been found! Please install ForceSeatPM.");
+            AnsiConsole.MarkupLine("ForceSeatMI library [bold]has not been found[/]! Please install ForceSeatPM.");
             return false;
         }
 
@@ -119,46 +117,46 @@ internal class Program : Command<Settings>
                 new SelectionPrompt<string>()
                     .Title("Select ForceSeatPM profile:")
                     .AddChoices(Profiles));
+        AnsiConsole.MarkupLine($"Selected ForceSeatPM profile: [green]{profile}[/]");
         _isPositioningSDK = profile == Profiles[1];
 
         if (!_mi.ActivateProfile(profile))
         {
-            Console.WriteLine($"Failed to activate the profile. Please make sure that the '{profile}' profile is installed and active in ForceSeatPM.");
+            AnsiConsole.MarkupLine($"Failed to activate the profile. Please make sure that [bold]'{profile}' profile[/] exists in ForceSeatPM and custom apps can activate it.");
             return false;
         }
 
-        if (_isSimulator)
+        AnsiConsole.Write("Connecting to the MotionPlatform client... ");
+        await Task.Delay(3000);     // the manual suggests having this delay...
+
+        bool isPlatformConnected = await WaitForState(10000, state => (state & FSMI_PlatformCurrentState.RefRunCompleted) != 0);
+        if (!isPlatformConnected)
         {
-            Console.WriteLine("Connected to the MotionPlatform simulator.");
+            AnsiConsole.MarkupLine("[red]failed[/]\nThe platform is off. Exiting... ");
+            return false;
         }
-        else
-        {
-            Console.Write("Connecting to the MotionPlatform client... ");
-            await Task.Delay(3000);     // the manual suggests having this delay...
-            Console.WriteLine("done.");
-        }
+
+        AnsiConsole.MarkupLine("[green]done[/].");
 
         if (!_mi.BeginMotionControl())
         {
-            Console.WriteLine("Failed to start motion control!");
+            AnsiConsole.MarkupLine("[red]Failed to start motion control![/]");
             return false;
         }
-        else if (!_isSimulator)
+        else
         {
-            Console.Write("Centralizing the platform... ");
+            AnsiConsole.Write("Centralizing the platform... ");
             _mi.Park(FSMI_ParkMode.ToCenter);
 
-            int maxTime = 10000;
-            do
+            if (await WaitForState(10000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0
+                                            && (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) != 0))
             {
-                await Task.Delay(500);
-                _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
-                maxTime -= 500;
-            } while (((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0
-                   || (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) == 0)
-                   && maxTime >= 0);
-
-            Console.WriteLine("done.");
+                AnsiConsole.MarkupLine("[green]done[/].");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[orange]timeout[/].");
+            }
             await Task.Delay(1500);
         }
 
@@ -167,21 +165,18 @@ internal class Program : Command<Settings>
 
     static async Task DisengagePlatform()
     {
-        if (!_isSimulator)
+        bool result = _mi.Park(FSMI_ParkMode.Normal);
+
+        if (result)
         {
-            bool result = _mi.Park(FSMI_ParkMode.Normal);
-
-            if (result)
+            AnsiConsole.Write("Parking the platform... ");
+            if (await WaitForState(15000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0))
             {
-                Console.Write("Parking the platform... ");
-
-                do
-                {
-                    await Task.Delay(500);
-                    _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
-                } while ((_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) == 0);
-
-                Console.WriteLine("done.");
+                AnsiConsole.MarkupLine("[green]done[/].");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[orange]timeout[/].");
             }
         }
 
@@ -201,6 +196,18 @@ internal class Program : Command<Settings>
         feeder.UsePositionInsteadOfTelemetry = _isPositioningSDK;
 
         return feeder.Run();
+    }
+
+    static async Task<bool> WaitForState(long maxWaitingTime, Func<ushort, bool> pred)
+    {
+        do
+        {
+            await Task.Delay(500);
+            _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
+            maxWaitingTime -= 500;
+        } while (!pred(_platformInfo.state) && maxWaitingTime >= 0);
+
+        return pred(_platformInfo.state);
     }
 
     #endregion

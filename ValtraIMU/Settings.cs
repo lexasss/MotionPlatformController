@@ -1,4 +1,5 @@
-﻿using SharpDialogs;
+﻿using MotionSystems;
+using SharpDialogs;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
@@ -57,6 +58,7 @@ internal class Settings : CommandSettings
     [DefaultValue(false)]
     public bool IsDebugMode { get; set; }
 
+    public static bool CanBroadcastData { get; set; }
     public static int Interval => 4;   // ms, corresponds to 250 Hz
 
     public void Resolve(Program.ContextArgs? context)
@@ -72,10 +74,13 @@ internal class Settings : CommandSettings
 
         if (Filename.Value == SIM_LABEL)
         {
+            AnsiConsole.MarkupLine($"Selected IMU data source: [green]simulation[/]");
+
             SimulationMode.Value = SimulationMode.IsSet ? SimulationMode.Value : AnsiConsole.Prompt(
                 new SelectionPrompt<SimulationMode>()
                     .Title("Select simulation mode:")
                     .AddChoices(Enum.GetValues<SimulationMode>()));
+            AnsiConsole.MarkupLine($"Selected simulation mode: [green]{SimulationMode.Value}[/]");
 
             if (SimulationMode.Value == ValtraIMU.SimulationMode.SineAcceleration ||
                 SimulationMode.Value == ValtraIMU.SimulationMode.MovePulse ||
@@ -85,6 +90,7 @@ internal class Settings : CommandSettings
                     new SelectionPrompt<Axis>()
                         .Title("Select axis used in simulation mode:")
                         .AddChoices(Enum.GetValues<Axis>()));
+                AnsiConsole.MarkupLine($"Selected axis: [green]{Axis.Value}[/]");
             }
 
             string units = SimulationMode.Value switch
@@ -109,6 +115,8 @@ internal class Settings : CommandSettings
         else if (!File.Exists(Filename.Value))
         {
             Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+            AnsiConsole.MarkupLine($"Selected IMU data source: [green]{Path.GetFileName(Filename.Value)}[/]");
+
             Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
         }
 
@@ -123,11 +131,52 @@ internal class Settings : CommandSettings
             SFX = SFX != null ? SFX : AnsiConsole.Ask<string?>("Tremor parameters (ampl[[,freq[[,fr,fl,rr,rl]]]]):", null);
         }
 
-        BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(
-            new SelectionPrompt<BroadcastDataType>()
-                .Title("Select broadcast data:")
-                .AddChoices(Enum.GetValues<BroadcastDataType>()));
+        if (CanBroadcastData)
+        {
+            BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(
+                new SelectionPrompt<BroadcastDataType>()
+                    .Title("Select broadcast data:")
+                    .AddChoices(Enum.GetValues<BroadcastDataType>()));
+            AnsiConsole.MarkupLine($"Selected broadcast data: [green]{BroadcastDataType.Value}[/]");
+        }
     }
 
+    public (bool, float, byte, ushort) ParseSFX()
+    {
+        bool use = false;
+        float amplitude = 0.001f;
+        byte frequency = 20;
+        ushort area = FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight;
+
+        var sfx = SFX?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(sfx))
+        {
+            use = true;
+            var p = sfx.Split(',');
+            if (p.Length > 0 && float.TryParse(p[0], out var ampl))
+                amplitude = ampl;
+            if (p.Length > 1 && byte.TryParse(p[1], out var freq))
+                frequency = freq;
+            if (p.Length > 2)
+            {
+                area = 0;
+                if (p.Contains("fr"))
+                    area |= FSMI_SFX_AreaFlags.FrontRight;
+                if (p.Contains("fl"))
+                    area |= FSMI_SFX_AreaFlags.FrontLeft;
+                if (p.Contains("rr"))
+                    area |= FSMI_SFX_AreaFlags.RearRight;
+                if (p.Contains("rl"))
+                    area |= FSMI_SFX_AreaFlags.RearLeft;
+            }
+        }
+
+        return (use, amplitude, frequency, area);
+    }
+
+    #region Internal
+
     const string SIM_LABEL = "sim";
+
+    #endregion
 }

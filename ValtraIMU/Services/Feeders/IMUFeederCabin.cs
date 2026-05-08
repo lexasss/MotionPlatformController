@@ -1,4 +1,5 @@
 ﻿using MotionSystems;
+using Spectre.Console;
 
 namespace ValtraIMU.Feeders;
 
@@ -42,11 +43,13 @@ internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProvid
 
         if (_settings.IsVerbose && !_settings.IsDebugMode && _nextRecordTimestamp % 100 == 0)
         {
+            int top = Console.CursorTop;
             Console.CursorLeft = 0;
-            Console.Write($"[{record.Timestamp:F3}] ");
-            Console.Write($"Vel: yaw {angVelAsRadians.Yaw,8:F4}, pitch {angVelAsRadians.Pitch,8:F4}, roll {angVelAsRadians.Roll,8:F4} | ");
-            Console.Write($"Acc: f {record.Acceleration.Longitudinal,8:F4}, u {record.Acceleration.Vertical,8:F4}, r {record.Acceleration.Lateral,8:F4} | ");
-            Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
+            AnsiConsole.Markup($"[yellow][[{record.Timestamp:F3}]][/] ");
+            AnsiConsole.Markup($"[yellow]Vel[/] yaw {angVelAsRadians.Yaw,8:F4}, pitch {angVelAsRadians.Pitch,8:F4}, roll {angVelAsRadians.Roll,8:F4} | ");
+            AnsiConsole.Markup($"[yellow]Acc[/] f {record.Acceleration.Longitudinal,8:F4}, u {record.Acceleration.Vertical,8:F4}, r {record.Acceleration.Lateral,8:F4} | ");
+            AnsiConsole.Markup($"[yellow]Ort[/] pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
+            Console.CursorTop = top;
         }
 
         _nextRecordTimestamp = record.Timestamp;

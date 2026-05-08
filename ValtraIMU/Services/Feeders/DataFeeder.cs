@@ -1,4 +1,5 @@
 ﻿using MotionSystems;
+using Spectre.Console;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -25,27 +26,7 @@ internal abstract class DataFeeder
         _position.mask = FSMI_POS_BIT.STATE | FSMI_POS_BIT.POSITION | FSMI_POS_BIT.MAX_SPEED;
         _position.maxSpeed = 65535;
 
-        if (settings.SFX != null)
-        {
-            _useSFX = true;
-            var p = settings.SFX.Trim().Split(',');
-            if (p.Length > 0 && float.TryParse(p[0], out var ampl))
-                _sfxAmplitude = ampl;
-            if (p.Length > 1 && byte.TryParse(p[1], out var freq))
-                _sfxFrequency = freq;
-            if (p.Length > 2)
-            {
-                _sfxArea = 0;
-                if (p.Contains("fr"))
-                    _sfxArea = FSMI_SFX_AreaFlags.FrontRight;
-                if (p.Contains("fl"))
-                    _sfxArea = FSMI_SFX_AreaFlags.FrontLeft;
-                if (p.Contains("rr"))
-                    _sfxArea = FSMI_SFX_AreaFlags.RearRight;
-                if (p.Contains("rl"))
-                    _sfxArea = FSMI_SFX_AreaFlags.RearLeft;
-            }
-        }
+        (_useSFX, _sfxAmplitude, _sfxFrequency, _sfxArea) = settings.ParseSFX();
     }
 
     /// <summary>
@@ -66,13 +47,14 @@ internal abstract class DataFeeder
         _stopwatch.Start();
         _nextRecordTimestamp = 0;
 
-        Console.WriteLine("Press:");
-        Console.WriteLine(" - ESC to terminate");
-        Console.WriteLine(" - 's' to stop current data stream");
-        Console.WriteLine(" - SPACE to pause/continue");
-        Console.WriteLine(" - 'v' to toggle verbosity");
-        Console.WriteLine(" - 'd' to toggle MotionPlatform diagnostics data output");
-        Console.WriteLine("\nRunning . . .");
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine("Press:");
+        AnsiConsole.MarkupLine(" - [blue]ESC[/] to terminate");
+        AnsiConsole.MarkupLine(" - [blue]s[/] to stop current data stream");
+        AnsiConsole.MarkupLine(" - [blue]SPACE[/] to pause/continue");
+        AnsiConsole.MarkupLine(" - [blue]v[/] to toggle verbosity");
+        AnsiConsole.MarkupLine(" - [blue]d[/] to toggle MotionPlatform diagnostics data output");
+        AnsiConsole.WriteLine("\nRunning . . .");
 
         Console.CursorVisible = false;
 
@@ -103,7 +85,7 @@ internal abstract class DataFeeder
                 }
                 else if (miInfoUpdateResult == Result.Ok)
                 {
-                    if (_settings.BroadcastDataType.Value == BroadcastDataType.PlatformInfo)
+                    if (Settings.CanBroadcastData && _settings.BroadcastDataType.Value == BroadcastDataType.PlatformInfo)
                         _telemetryBroadcaster.Send(ref _platformInfo);
 
                     if (_settings.IsDebugMode)
@@ -120,9 +102,9 @@ internal abstract class DataFeeder
         _stopwatch.Stop();
 
         if (Console.CursorLeft > 0)
-            Console.WriteLine();
+            AnsiConsole.WriteLine();
 
-        Console.WriteLine("Stopped.");
+        AnsiConsole.MarkupLine("[yellow]Stopped[/].");
         Console.CursorVisible = true;
 
         _ = TimeEndPeriod(1);
@@ -168,10 +150,10 @@ internal abstract class DataFeeder
     readonly Stopwatch _stopwatch = new();
     readonly Services.TelemetryBroadcaster _telemetryBroadcaster = new();
 
-    readonly bool _useSFX = false;
-    readonly float _sfxAmplitude = 0.001f;
-    readonly byte _sfxFrequency = 20;
-    readonly ushort _sfxArea = FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight;
+    readonly bool _useSFX;
+    readonly float _sfxAmplitude;
+    readonly byte _sfxFrequency;
+    readonly ushort _sfxArea;
 
     static FSMI_PlatformInfo _platformInfo = new();
     readonly uint _piSize = (uint)Marshal.SizeOf(_platformInfo);
@@ -193,7 +175,7 @@ internal abstract class DataFeeder
         if (!result)
             return result;
 
-        if (_settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
+        if (Settings.CanBroadcastData && _settings.BroadcastDataType.Value == BroadcastDataType.Telemetry)
             _telemetryBroadcaster.Send(ref _telemetry);
 
         if (UsePositionInsteadOfTelemetry)
@@ -254,15 +236,15 @@ internal abstract class DataFeeder
                 {
                     _stopwatch.Stop();
                     if (Console.CursorLeft > 0)
-                        Console.WriteLine();
-                    Console.WriteLine("Paused, press SPACE to continue");
+                        AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine("Paused, press [blue]SPACE[/] to continue");
                 }
                 else
                 {
                     _stopwatch.Start();
                     if (Console.CursorLeft > 0)
-                        Console.WriteLine();
-                    Console.WriteLine("Running . . .");
+                        AnsiConsole.WriteLine();
+                    AnsiConsole.WriteLine("Running . . .");
                 }
                 return KeyHandlerResult.Handled;
             }
@@ -286,12 +268,12 @@ internal abstract class DataFeeder
         {
             if (_platformInfo.structSize != Marshal.SizeOf(_platformInfo))
             {
-                Console.WriteLine("Incorrect structure size: {0} vs {1}", _platformInfo.structSize, Marshal.SizeOf(_platformInfo));
+                AnsiConsole.MarkupLine("[red]Incorrect structure size[/]: {0} vs {1}", _platformInfo.structSize, Marshal.SizeOf(_platformInfo));
                 return Result.Failed;
             }
             else if (_platformInfo.timemark == _recentMark)
             {
-                //Console.WriteLine("No new platform info");
+                // no new platform info
             }
             else
             {
@@ -301,7 +283,7 @@ internal abstract class DataFeeder
         }
         else
         {
-            Console.WriteLine("Failed to get platform info");
+            AnsiConsole.MarkupLine("[red]Failed to get platform info[/]");
         }
 
         return Result.Exiting;

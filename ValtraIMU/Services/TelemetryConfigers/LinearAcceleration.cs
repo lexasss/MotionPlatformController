@@ -1,4 +1,5 @@
 ﻿using MotionSystems;
+using Spectre.Console;
 
 namespace ValtraIMU.TelemetryConfigers;
 
@@ -10,7 +11,7 @@ internal class LinearAcceleration : ITelemetryConfiger
         {
             Console.CursorLeft = 0;
             var valuesStr = string.Join(' ', values.Select(value => $"{value:F4} m/s²"));
-            Console.Write($"LinearAcceleleration: {valuesStr}");
+            AnsiConsole.Write($"LinearAcceleleration: {valuesStr}");
         }
 
         ref FSMI_TelemetryRUF linAccel = ref telemetry.bodyLinearAcceleration[0];

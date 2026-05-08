@@ -1,4 +1,5 @@
-﻿using ValtraIMU.Services.DataProviders;
+﻿using Spectre.Console;
+using ValtraIMU.Services.DataProviders;
 
 namespace ValtraIMU.DataProviders;
 
@@ -19,13 +20,13 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
         var filename = settings.Filename.Value;
         if (File.Exists(filename))
         {
-            Console.Write($"Loading as IMU Front...  ");
+            AnsiConsole.Write($"Loading as IMU Front...  ");
             try
             {
                 result = new IMUFileFront(filename, settings.SkipRate);
-                Console.WriteLine("done.");
+                AnsiConsole.MarkupLine("[green]done[/].");
             }
-            catch { Console.WriteLine("failed."); }
+            catch { AnsiConsole.MarkupLine("[red]failed[/]."); }
         }
 
         return result;
@@ -71,7 +72,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
                     .ToArray();
             }
             catch (FormatException) { return null; }
-            catch { Console.WriteLine($"Invalid data: {line}"); }
+            catch { AnsiConsole.MarkupLine($"[red]Invalid data[/]: {line}"); }
 
             if (values?.Length == 22)
             {

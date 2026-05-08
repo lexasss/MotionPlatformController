@@ -1,4 +1,5 @@
 ﻿using MotionSystems;
+using Spectre.Console;
 
 namespace ValtraIMU.Feeders;
 
@@ -40,10 +41,10 @@ internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         {
             int top = Console.CursorTop;
             Console.CursorLeft = 0;
-            Console.Write($"[{record.Timestamp}] ");
-            Console.Write($"Vel: yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");
-            Console.Write($"Acc: f {record.BodyAcceleration.Y,8:F4}, u {record.BodyAcceleration.Z,8:F4}, r {record.BodyAcceleration.X,8:F4} | ");
-            Console.Write($"Ort: pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
+            AnsiConsole.Markup($"[yellow][[{record.Timestamp}]][/] ");
+            AnsiConsole.Markup($"[yellow]Vel[/] yaw {angVelAsRadians.Z,8:F4}, pitch {angVelAsRadians.X,8:F4}, roll {angVelAsRadians.Y,8:F4} | ");
+            AnsiConsole.Markup($"[yellow]Acc[/] f {record.BodyAcceleration.Y,8:F4}, u {record.BodyAcceleration.Z,8:F4}, r {record.BodyAcceleration.X,8:F4} | ");
+            AnsiConsole.Markup($"[yellow]Ort[/] pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");
             Console.CursorTop = top;
         }
 
@@ -88,8 +89,8 @@ internal class IMUFeederFront(ForceSeatMI_NET8 mi, Settings settings, DataProvid
             int top = Console.CursorTop;
             Console.CursorTop += 1;
             Console.CursorLeft = 0;
-            Console.Write($"[{record.Timestamp}] ");
-            Console.Write($"sway {_position.sway,8:F4}, surge {_position.surge,8:F4}, heave {_position.heave,8:F4} | vsway {_swayVel,8:F4}, vsurge {_surgeVel,8:F4}, vheave {_heaveVel,8:F4}");
+            AnsiConsole.Markup($"[yellow][[{record.Timestamp}]][/] ");
+            AnsiConsole.Write($"sway {_position.sway,8:F4}, surge {_position.surge,8:F4}, heave {_position.heave,8:F4} | vsway {_swayVel,8:F4}, vsurge {_surgeVel,8:F4}, vheave {_heaveVel,8:F4}");
             Console.CursorTop = top;
         }
     }
