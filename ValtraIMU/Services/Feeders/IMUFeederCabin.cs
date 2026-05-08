@@ -9,6 +9,9 @@ namespace ValtraIMU.Feeders;
 /// </summary>
 internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProviders.IMUFileCabin dataProvider) : DataFeeder(mi, settings)
 {
+    protected override bool IsDataStreamLimited => true;
+    protected override double Progress => _dataProvider.Progress * 100;
+
     /// <summary>
     /// Implements the data conversion between IMU and MotionPlatform formats and sending logic.
     /// </summary>
@@ -45,7 +48,7 @@ internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         {
             int top = Console.CursorTop;
             Console.CursorLeft = 0;
-            AnsiConsole.Markup($"[yellow][[{record.Timestamp:F3}]][/] ");
+            AnsiConsole.Markup($"[bold]{record.Timestamp:F3}[/] ");
             AnsiConsole.Markup($"[yellow]Vel[/] yaw {angVelAsRadians.Yaw,8:F4}, pitch {angVelAsRadians.Pitch,8:F4}, roll {angVelAsRadians.Roll,8:F4} | ");
             AnsiConsole.Markup($"[yellow]Acc[/] f {record.Acceleration.Longitudinal,8:F4}, u {record.Acceleration.Vertical,8:F4}, r {record.Acceleration.Lateral,8:F4} | ");
             AnsiConsole.Markup($"[yellow]Ort[/] pitch {orientAsRadians.Pitch,8:F4}, roll {orientAsRadians.Roll,8:F4}");

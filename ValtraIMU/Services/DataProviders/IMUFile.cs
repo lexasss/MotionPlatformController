@@ -7,11 +7,18 @@ internal abstract class IMUFile<T> : IDataProvider<T> where T : Models.IRecord
 {
     public T Current => _nextRecord ?? throw new Exception();
 
+    public double Progress => (double)_bytesRead / _stream.BaseStream.Length;
+
     /// <summary>Constructor</summary>
     /// <param name="filename">data filename</param>
     /// <param name="skipRate">number of lines to skip</param>
     public IMUFile(string filename, int skipRate = 0)
     {
+        using (var file = File.OpenRead(filename))
+        {
+            _totalBytes = file.Length;
+        }
+
         _stream = new StreamReader(filename);
         _skipRate = skipRate;
 
@@ -20,6 +27,8 @@ internal abstract class IMUFile<T> : IDataProvider<T> where T : Models.IRecord
 
         while (line != null && !_stream.EndOfStream)
         {
+            _bytesRead += (long)line.Length + 2;
+
             if (line.Length > 0 && int.TryParse(line[0..1], out int _))
             {
                 _nextRecord = GetRecord(line);
@@ -64,6 +73,9 @@ internal abstract class IMUFile<T> : IDataProvider<T> where T : Models.IRecord
     #endregion
 
     #region Internal
+
+    long _totalBytes;
+    protected long _bytesRead = 0;
 
     object IEnumerator.Current => Current;
 

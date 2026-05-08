@@ -127,8 +127,6 @@ internal class Program : Command<Settings>
         }
 
         AnsiConsole.Write("Connecting to the MotionPlatform client... ");
-        await Task.Delay(3000);     // the manual suggests having this delay...
-
         bool isPlatformConnected = await WaitForState(10000, state => (state & FSMI_PlatformCurrentState.RefRunCompleted) != 0);
         if (!isPlatformConnected)
         {
@@ -157,7 +155,6 @@ internal class Program : Command<Settings>
             {
                 AnsiConsole.MarkupLine("[orange]timeout[/].");
             }
-            await Task.Delay(1500);
         }
 
         return true;

@@ -20,7 +20,7 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
         var filename = settings.Filename.Value;
         if (File.Exists(filename))
         {
-            AnsiConsole.Write($"Loading as IMU Cabin...  ");
+            AnsiConsole.Write("Loading as IMU Cabin... ");
             try
             {
                 result = new IMUFileCabin(filename, settings.SkipRate);
@@ -64,6 +64,8 @@ internal class IMUFileCabin(string filename, int skipRate = 0) : IMUFile<Models.
             if (line == null)
                 break;
 
+            _bytesRead += (long)line.Length + 2;
+            
             try
             {
                 values = line

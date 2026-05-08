@@ -20,7 +20,7 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
         var filename = settings.Filename.Value;
         if (File.Exists(filename))
         {
-            AnsiConsole.Write($"Loading as IMU Front...  ");
+            AnsiConsole.Write("Loading as IMU Front... ");
             try
             {
                 result = new IMUFileFront(filename, settings.SkipRate);
@@ -62,6 +62,8 @@ internal class IMUFileFront(string filename, int skipRate = 0) : IMUFile<Models.
             line ??= _stream.ReadLine();
             if (line == null)
                 break;
+
+            _bytesRead += (long)line.Length + 2;
 
             try
             {

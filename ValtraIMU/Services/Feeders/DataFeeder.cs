@@ -56,6 +56,23 @@ internal abstract class DataFeeder
         AnsiConsole.MarkupLine(" - [blue]d[/] to toggle MotionPlatform diagnostics data output");
         AnsiConsole.WriteLine("\nRunning . . .");
 
+        if (IsDataStreamLimited && !_settings.IsDebugMode && !_settings.IsVerbose)
+        {
+            _progressTask = AnsiConsole.Progress().StartAsync(async (ctx) =>
+            {
+                _consoleProgressTask = ctx.AddTask("Progress:");
+
+                while (!ctx.IsFinished && _stopwatch.IsRunning)
+                {
+                    _consoleProgressTask.Value = Progress;
+                    await Task.Delay(50);
+                }
+
+                _consoleProgressTask.Value = 100;
+                return Task.CompletedTask;
+            });
+        }
+
         Console.CursorVisible = false;
 
         while (true)
@@ -88,8 +105,11 @@ internal abstract class DataFeeder
                     if (Settings.CanBroadcastData && _settings.BroadcastDataType.Value == BroadcastDataType.PlatformInfo)
                         _telemetryBroadcaster.Send(ref _platformInfo);
 
-                    if (_settings.IsDebugMode)
+                    if (_settings.IsDebugMode && (_platformInfo.timemark - _debugInfoPrintTimestamp) > DebugInfoPrintInterval)
+                    {
                         printer.PrintStatus(ref _platformInfo);
+                        _debugInfoPrintTimestamp = _platformInfo.timemark;
+                    }
                 }
             }
 
@@ -100,6 +120,11 @@ internal abstract class DataFeeder
         }
 
         _stopwatch.Stop();
+
+        _progressTask?.Wait();
+        _progressTask?.Dispose();
+        _progressTask = null;
+        _consoleProgressTask = null;
 
         if (Console.CursorLeft > 0)
             AnsiConsole.WriteLine();
@@ -132,19 +157,57 @@ internal abstract class DataFeeder
     protected long _nextRecordTimestamp = 0;
 
     /// <summary>
+    /// To be set to 'true' by descendants that has limited data stream.
+    /// </summary>
+    protected virtual bool IsDataStreamLimited => false;
+
+    /// <summary>
+    /// Progress of data stream. Descendats that has limited data stream must override this method.
+    /// </summary>
+    /// <returns>Progress between 0 and 100</returns>
+    protected virtual double Progress => 0;
+
+    /// <summary>
     /// To be implemented by descendants to fill <see cref="_telemetry"/> and set <see cref="_nextRecordTimestamp">.
     /// </summary>
     /// <returns>Must return true if the telemetry data was sent successfully; otherwise, false.</returns>
     protected abstract bool PrepareTelemetry();
 
     /// <summary>
-    /// To be implemented by descendants to fill <see cref="_position"/>. Notice that <see cref="PrepareTelemetry"> will be called anyway.
+    /// Descendants may reimplement this method to fill <see cref="_position"/> that will be used if *SDK - Positioning* profile was selected.
+    /// Notice that <see cref="PrepareTelemetry"> will be called anyway prior to this method.
     /// </summary>
     protected virtual void PreparePosition() { }
+
+    /// <summary>
+    /// Fills SFX effect data if SFX is enabled. Descendants may reimplement this method to modify how SFX effect is formed, 
+    /// or add tactile or seat-belt efffects (they are disabled in this implementation).
+    /// </summary>
+    protected virtual (FSMI_SFX, FSMI_TactileAudioBasedFeedbackEffects, FSMI_SbtData) CreateAdditionalData()
+    {
+        var sfx = FSMI_SFX.Prepare();
+        sfx.effectsCount = 1;
+        sfx.effects[0].type = (byte)FSMI_SFX_EffectType.SinusLevel2;
+        sfx.effects[0].area = _sfxArea;
+        sfx.effects[0].amplitude = _sfxAmplitude;
+        sfx.effects[0].frequency = _sfxFrequency;
+
+        // tactile via audio
+        var audio = FSMI_TactileAudioBasedFeedbackEffects.Prepare();
+        audio.structSize = 0;
+
+        // seat belt tensioner
+        var sbt = FSMI_SbtData.Prepare();
+        sbt.structSize = 0;
+
+        return (sfx, audio, sbt);
+    }
 
     #endregion
 
     #region Internal
+
+    const ulong DebugInfoPrintInterval = 100;    // ms
 
     readonly ForceSeatMI_NET8 _mi;
     readonly Stopwatch _stopwatch = new();
@@ -160,6 +223,10 @@ internal abstract class DataFeeder
 
     bool _isPaused = false;
     ulong _recentMark = 0;
+    ulong _debugInfoPrintTimestamp = 0;
+
+    Task? _progressTask;
+    ProgressTask? _consoleProgressTask;
 
     enum KeyHandlerResult
     {
@@ -199,23 +266,6 @@ internal abstract class DataFeeder
         return result;
     }
 
-    private (FSMI_SFX, FSMI_TactileAudioBasedFeedbackEffects, FSMI_SbtData) CreateAdditionalData()
-    {
-        var sfx = FSMI_SFX.Prepare();
-        sfx.effectsCount = 1;
-        sfx.effects[0].type = (byte)FSMI_SFX_EffectType.SinusLevel2;
-        sfx.effects[0].area = _sfxArea;
-        sfx.effects[0].amplitude = _sfxAmplitude;
-        sfx.effects[0].frequency = _sfxFrequency;
-
-        var audio = FSMI_TactileAudioBasedFeedbackEffects.Prepare();
-
-        // seat belt tensioner
-        var sbt = FSMI_SbtData.Prepare();
-
-        return (sfx, audio, sbt);
-    }
-
     private KeyHandlerResult HandleKeyPress()
     {
         if (Console.KeyAvailable)
@@ -251,10 +301,18 @@ internal abstract class DataFeeder
             else if (key.Key == ConsoleKey.V)
             {
                 _settings.IsVerbose = !_settings.IsVerbose;
+                if (_settings.IsVerbose)
+                {
+                    _consoleProgressTask?.StopTask();
+                }
             }
             else if (key.Key == ConsoleKey.D)
             {
                 _settings.IsDebugMode = !_settings.IsDebugMode;
+                if (_settings.IsDebugMode)
+                {
+                    _consoleProgressTask?.StopTask();
+                }
             }
         }
 

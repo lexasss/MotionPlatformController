@@ -72,6 +72,22 @@ internal class Settings : CommandSettings
                     ])
                 ).StartsWith('2') ? SIM_LABEL : null);
 
+        if (Filename.Value != SIM_LABEL && !File.Exists(Filename.Value))
+        {
+            Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+            if (!string.IsNullOrEmpty(Filename.Value))
+            {
+                Filename.IsSet = true;
+                AnsiConsole.MarkupLine($"Selected IMU data source: [green]{Path.GetFileName(Filename.Value)}[/]");
+
+                Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
+            }
+            else
+            {
+                Filename.Value = SIM_LABEL;
+            }
+        }
+
         if (Filename.Value == SIM_LABEL)
         {
             AnsiConsole.MarkupLine($"Selected IMU data source: [green]simulation[/]");
@@ -112,13 +128,6 @@ internal class Settings : CommandSettings
                 Frequency = Frequency != 0.5 ? Frequency : AnsiConsole.Ask("Frequency:", context?.Frequency ?? Frequency);
             }
         }
-        else if (!File.Exists(Filename.Value))
-        {
-            Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
-            AnsiConsole.MarkupLine($"Selected IMU data source: [green]{Path.GetFileName(Filename.Value)}[/]");
-
-            Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
-        }
 
         IsDebugMode = context?.IsDebugMode ?? IsDebugMode;
         IsVerbose = context?.IsVerbose ?? IsVerbose;
@@ -128,7 +137,7 @@ internal class Settings : CommandSettings
             SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusForward ||
             SimulationMode.Value == ValtraIMU.SimulationMode.SideSwayPlusUpward)
         {
-            SFX = SFX != null ? SFX : AnsiConsole.Ask<string?>("Tremor parameters (ampl[[,freq[[,fr,fl,rr,rl]]]]):", null);
+            SFX ??= AnsiConsole.Ask<string?>("Tremor parameters (ampl/m[[,freq/Hz[[,fr,fl,rr,rl]]]]):", null);
         }
 
         if (CanBroadcastData)
