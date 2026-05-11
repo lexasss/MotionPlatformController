@@ -1,0 +1,191 @@
+﻿using MotionSystems;
+using SharpDialogs;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
+
+namespace ValtraMPC;
+
+/// <summary>
+/// Command-line settings for the application. 
+/// Always run <see cref="Resolve"/> method before using its values.
+/// </summary>
+internal class Settings : CommandSettings
+{
+    [Description($"Valtra IMU+GNSS data file, or '{SIM_LABEL}' to use data simulator")]
+    [CommandArgument(0, "[filename]")]
+    public FlagValue<string?> Filename { get; set; } = new FlagValue<string?>();
+
+    [CommandOption("-m|--mode <MODE>")]
+    [Description("Simulation mode")]
+    public FlagValue<SimulationMode> SimulationMode { get; set; } = new FlagValue<SimulationMode>();
+
+    [CommandOption("-x|--axis <AXIS>")]
+    [Description("Axis used in simulation mode")]
+    public FlagValue<Axis> Axis { get; set; } = new FlagValue<Axis>();
+
+    [CommandOption("-a|--amplitude <NUMBER>")]
+    [Description("Signal amplitude in simulation mode")]
+    [DefaultValue(1.0)]
+    public double Amplitude { get; set; }
+
+    [CommandOption("-f|--frequency <NUMBER>")]
+    [Description("Signal frequency in simulation mode")]
+    [DefaultValue(0.5)]
+    public double Frequency { get; set; }
+
+    [CommandOption("--sfx")]
+    [Description("SFX amplitude (float), frequency (byte) and optionally areas (fr,fl,rr,rl) separated by comma")]
+    [DefaultValue(null)]
+    public string? SFX { get; set; }
+
+    [CommandOption("-s|--skip <NUMBER>")]
+    [Description("Skip rate for IMU data")]
+    [DefaultValue(1)]
+    public int SkipRate { get; set; }
+
+    [CommandOption("-b|--broadcast <DATATYPE>")]
+    [Description("Data type to broadcast")]
+    public FlagValue<BroadcastDataType> BroadcastDataType { get; set; } = new FlagValue<BroadcastDataType>();
+
+    [CommandOption("-v|--verbose")]
+    [Description("Debug info is printed in the verbose mode.")]
+    [DefaultValue(false)]
+    public bool IsVerbose { get; set; }
+
+    [CommandOption("-d|--debug")]
+    [Description("Sets to the debug mode.")]
+    [DefaultValue(false)]
+    public bool IsDebugMode { get; set; }
+
+    public static bool CanBroadcastData { get; set; }
+    public static int Interval => 4;   // ms, corresponds to 250 Hz
+
+    public void Resolve(Models.ContextArgs? context)
+    {
+        Filename.Value = Filename.IsSet ? Filename.Value : (AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select IMU data source:")
+                    .AddChoices([
+                        "1. Recorded file",
+                        "2. Simulated data"
+                    ])
+                ).StartsWith('2') ? SIM_LABEL : null);
+
+        if (Filename.Value != SIM_LABEL && !File.Exists(Filename.Value))
+        {
+            Filename.Value = SharpFileOpenDialog.ShowSingleSelect(IntPtr.Zero, "Valtra IMU+GNSS data");
+            if (!string.IsNullOrEmpty(Filename.Value))
+            {
+                Filename.IsSet = true;
+                AnsiConsole.MarkupLine($"Selected IMU data source: [green]{Path.GetFileName(Filename.Value)}[/]");
+
+                Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask("Amplitude:", context?.Amplitude ?? Amplitude);
+            }
+            else
+            {
+                Filename.Value = SIM_LABEL;
+            }
+        }
+
+        if (Filename.Value == SIM_LABEL)
+        {
+            AnsiConsole.MarkupLine($"Selected IMU data source: [green]simulation[/]");
+
+            SimulationMode.Value = SimulationMode.IsSet ? SimulationMode.Value : AnsiConsole.Prompt(
+                new SelectionPrompt<SimulationMode>()
+                    .Title("Select simulation mode:")
+                    .AddChoices(Enum.GetValues<SimulationMode>()));
+            AnsiConsole.MarkupLine($"Selected simulation mode: [green]{SimulationMode.Value}[/]");
+
+            if (SimulationMode.Value == ValtraMPC.SimulationMode.SineAcceleration ||
+                SimulationMode.Value == ValtraMPC.SimulationMode.MovePulse ||
+                SimulationMode.Value == ValtraMPC.SimulationMode.Sway)
+            {
+                Axis.Value = Axis.IsSet ? Axis.Value : AnsiConsole.Prompt(
+                    new SelectionPrompt<Axis>()
+                        .Title("Select axis used in simulation mode:")
+                        .AddChoices(Enum.GetValues<Axis>()));
+                AnsiConsole.MarkupLine($"Selected axis: [green]{Axis.Value}[/]");
+            }
+
+            string units = SimulationMode.Value switch
+            {
+                ValtraMPC.SimulationMode.SineAcceleration => "m/s²",
+                ValtraMPC.SimulationMode.MovePulse => "m/s",
+                ValtraMPC.SimulationMode.Sway or ValtraMPC.SimulationMode.CircluarSway => "deg",
+                ValtraMPC.SimulationMode.SideSwayPlusForward or ValtraMPC.SimulationMode.SideSwayPlusUpward => "m/s²",
+                _ => "-"
+            };
+            Amplitude = Amplitude != 1 ? Amplitude : AnsiConsole.Ask($"Amplitude ({units}):", context?.Amplitude ?? Amplitude);
+
+            if (SimulationMode.Value == ValtraMPC.SimulationMode.SineAcceleration || 
+                SimulationMode.Value == ValtraMPC.SimulationMode.Sway ||
+                SimulationMode.Value == ValtraMPC.SimulationMode.CircluarSway ||
+                SimulationMode.Value == ValtraMPC.SimulationMode.SideSwayPlusForward ||
+                SimulationMode.Value == ValtraMPC.SimulationMode.SideSwayPlusUpward)
+            {
+                Frequency = Frequency != 0.5 ? Frequency : AnsiConsole.Ask("Frequency:", context?.Frequency ?? Frequency);
+            }
+        }
+
+        IsDebugMode = context?.IsDebugMode ?? IsDebugMode;
+        IsVerbose = context?.IsVerbose ?? IsVerbose;
+
+        if (Filename.Value == SIM_LABEL &&
+            SimulationMode.Value == ValtraMPC.SimulationMode.SineAcceleration ||
+            SimulationMode.Value == ValtraMPC.SimulationMode.SideSwayPlusForward ||
+            SimulationMode.Value == ValtraMPC.SimulationMode.SideSwayPlusUpward)
+        {
+            SFX ??= AnsiConsole.Ask<string?>("Tremor parameters (ampl/m[[,freq/Hz[[,fr,fl,rr,rl]]]]):", null);
+        }
+
+        if (CanBroadcastData)
+        {
+            BroadcastDataType.Value = BroadcastDataType.IsSet ? BroadcastDataType.Value : AnsiConsole.Prompt(
+                new SelectionPrompt<BroadcastDataType>()
+                    .Title("Select broadcast data:")
+                    .AddChoices(Enum.GetValues<BroadcastDataType>()));
+            AnsiConsole.MarkupLine($"Selected broadcast data: [green]{BroadcastDataType.Value}[/]");
+        }
+    }
+
+    public (bool, float, byte, ushort) ParseSFX()
+    {
+        bool use = false;
+        float amplitude = 0.001f;
+        byte frequency = 20;
+        ushort area = FSMI_SFX_AreaFlags.FrontLeft | FSMI_SFX_AreaFlags.FrontRight;
+
+        var sfx = SFX?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(sfx))
+        {
+            use = true;
+            var p = sfx.Split(',');
+            if (p.Length > 0 && float.TryParse(p[0], out var ampl))
+                amplitude = ampl;
+            if (p.Length > 1 && byte.TryParse(p[1], out var freq))
+                frequency = freq;
+            if (p.Length > 2)
+            {
+                area = 0;
+                if (p.Contains("fr"))
+                    area |= FSMI_SFX_AreaFlags.FrontRight;
+                if (p.Contains("fl"))
+                    area |= FSMI_SFX_AreaFlags.FrontLeft;
+                if (p.Contains("rr"))
+                    area |= FSMI_SFX_AreaFlags.RearRight;
+                if (p.Contains("rl"))
+                    area |= FSMI_SFX_AreaFlags.RearLeft;
+            }
+        }
+
+        return (use, amplitude, frequency, area);
+    }
+
+    #region Internal
+
+    const string SIM_LABEL = "sim";
+
+    #endregion
+}
