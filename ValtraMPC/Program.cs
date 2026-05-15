@@ -64,6 +64,8 @@ internal class Program : Command<Settings>
     public override int Execute(CommandContext context, Settings settings, CancellationToken cts)
     {
         settings.Resolve((Models.ContextArgs?)context.Data);
+        if (settings.IsExiting)
+            return -1;
 
         // Try to create IMU data provider
         DataProviders.IMUFileFront? imuFrontProvider = DataProviders.IMUFileFront.Create(ref settings);
@@ -117,7 +119,7 @@ internal class Program : Command<Settings>
         bool isPlatformConnected = false;
         AnsiConsole.Status().Start("Connecting to the MotionPlatform client... ", ctx =>
         {
-            var task = WaitForAllStates(10000, FSMI_PlatformCurrentState.RefRunCompleted);
+            var task = WaitForAllStates(20000, FSMI_PlatformCurrentState.RefRunCompleted);
             task.Wait();
             isPlatformConnected = task.Result;
         });
@@ -164,7 +166,7 @@ internal class Program : Command<Settings>
             bool hasParked = false;
             AnsiConsole.Status().Start("Parking the platform... ", ctx =>
             {
-                var task = WaitForAllStates(15000, FSMI_PlatformCurrentState.ParkingCompleted);
+                var task = WaitForAllStates(15000, FSMI_PlatformCurrentState.ParkingCompleted, FSMI_PlatformCurrentState.SoftParkNormal);
                 task.Wait();
                 hasParked = task.Result;
             });

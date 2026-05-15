@@ -58,19 +58,32 @@ internal class Settings : CommandSettings
     [DefaultValue(false)]
     public bool IsDebugMode { get; set; }
 
+    public bool IsExiting { get; private set; }
     public static bool CanBroadcastData { get; set; }
     public static int Interval => 4;   // ms, corresponds to 250 Hz
 
     public void Resolve(Models.ContextArgs? context)
     {
-        Filename.Value = Filename.IsSet ? Filename.Value : (AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Select IMU data source:")
-                    .AddChoices([
-                        "1. Recorded file",
-                        "2. Simulated data"
-                    ])
-                ).StartsWith('2') ? SIM_LABEL : null);
+        if (!Filename.IsSet)
+        {
+            var mode = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("Select IMU data source:")
+                        .AddChoices([
+                            "1. Recorded file",
+                        "2. Simulated data",
+                        "3. Quit"
+                        ])
+                    );
+
+            if (mode.StartsWith('3'))
+            {
+                IsExiting = true;
+                return;
+            }
+
+            Filename.Value = Filename.IsSet ? Filename.Value : (mode.StartsWith('2') ? SIM_LABEL : null);
+        }
 
         if (Filename.Value != SIM_LABEL && !File.Exists(Filename.Value))
         {
