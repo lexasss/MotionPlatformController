@@ -117,7 +117,7 @@ internal class Program : Command<Settings>
         bool isPlatformConnected = false;
         AnsiConsole.Status().Start("Connecting to the MotionPlatform client... ", ctx =>
         {
-            var task = WaitForState(10000, state => (state & FSMI_PlatformCurrentState.RefRunCompleted) != 0);
+            var task = WaitForAllStates(10000, FSMI_PlatformCurrentState.RefRunCompleted);
             task.Wait();
             isPlatformConnected = task.Result;
         });
@@ -143,14 +143,13 @@ internal class Program : Command<Settings>
             bool hasCentralized = false;
             AnsiConsole.Status().Start("Centralizing the platform... ", ctx =>
             {
-                var task = WaitForState(10000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0
-                                            && (_platformInfo.state & FSMI_PlatformCurrentState.SoftParkToCenter) != 0);
+                var task = WaitForAllStates(10000, FSMI_PlatformCurrentState.ParkingCompleted, FSMI_PlatformCurrentState.SoftParkToCenter);
                 task.Wait();
                 hasCentralized = task.Result;
             });
 
             AnsiConsole.Write($"Centralizing the platform... ");
-            AnsiConsole.MarkupLine(hasCentralized ? "[green]done[/]." : "[orange]timeout[/].");
+            AnsiConsole.MarkupLine(hasCentralized ? "[green]done[/]." : "[orange1]timeout[/].");
         }
 
         return true;
@@ -165,13 +164,13 @@ internal class Program : Command<Settings>
             bool hasParked = false;
             AnsiConsole.Status().Start("Parking the platform... ", ctx =>
             {
-                var task = WaitForState(15000, state => (_platformInfo.state & FSMI_PlatformCurrentState.ParkingCompleted) != 0);
+                var task = WaitForAllStates(15000, FSMI_PlatformCurrentState.ParkingCompleted);
                 task.Wait();
                 hasParked = task.Result;
             });
 
             AnsiConsole.Write("Parking the platform... ");
-            AnsiConsole.MarkupLine(hasParked ? "[green]done[/]." : "[orange]timeout[/].");
+            AnsiConsole.MarkupLine(hasParked ? "[green]done[/]." : "[orange1]timeout[/].");
         }
 
         _mi.EndMotionControl();
@@ -191,17 +190,17 @@ internal class Program : Command<Settings>
 
         return feeder.Run();
     }
-
-    static async Task<bool> WaitForState(long maxWaitingTime, Func<ushort, bool> pred)
+    
+    static async Task<bool> WaitForAllStates(long maxWaitingTime, params ushort[] states)
     {
         do
         {
             await Task.Delay(500);
             _mi.GetPlatformInfoEx(ref _platformInfo, _platformInfo.structSize, 100);
             maxWaitingTime -= 500;
-        } while (!pred(_platformInfo.state) && maxWaitingTime >= 0);
+        } while (!states.All(state => (_platformInfo.state & state) != 0) && maxWaitingTime >= 0);
 
-        return pred(_platformInfo.state);
+        return states.All(state => (_platformInfo.state & state) != 0);
     }
 
     #endregion
