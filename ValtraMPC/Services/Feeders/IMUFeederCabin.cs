@@ -28,7 +28,7 @@ internal class IMUFeederCabin(ForceSeatMI_NET8 mi, Settings settings, DataProvid
         var angVelAsRadians = record.AngularVelocity.ToRadians();
         var orientAsRadians = record.Orientation.ToRadians();
 
-        var acceleration = record.Acceleration; // Models.Acceleration2.FromArray(_accelerationFilter.Process(record.Acceleration.ToArray()));
+        var acceleration = record.Acceleration;
         if (_accelVertOffset == 0)  // looks like this is not needed as MotionPlatform ignores high values, but just in case (it is around "g") ...
             _accelVertOffset = acceleration.Vertical;
 

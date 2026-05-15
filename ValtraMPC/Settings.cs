@@ -67,16 +67,16 @@ internal class Settings : CommandSettings
         if (!Filename.IsSet)
         {
             var mode = AnsiConsole.Prompt(
-                    new SelectionPrompt<string>()
-                        .Title("Select IMU data source:")
-                        .AddChoices([
-                            "1. Recorded file",
+                new SelectionPrompt<string>()
+                    .Title("Select IMU data source:")
+                    .AddChoices([
+                        "1. Recorded file",
                         "2. Simulated data",
-                        "3. Quit"
-                        ])
-                    );
+                        "[[Quit]]"
+                    ])
+                );
 
-            if (mode.StartsWith('3'))
+            if (mode.StartsWith('['))
             {
                 IsExiting = true;
                 return;

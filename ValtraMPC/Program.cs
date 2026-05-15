@@ -31,7 +31,10 @@ internal class Program : Command<Settings>
         Settings.CanBroadcastData = AnsiConsole.Confirm("Is data broadcasting enabled?", false);
 
         if (!EngagePlatform())
+        {
+            AnsiConsole.WriteLine();
             return;
+        }
 
         bool mustClear = false;
         do
@@ -112,22 +115,23 @@ internal class Program : Command<Settings>
 
         if (!_mi.ActivateProfile(profile))
         {
-            AnsiConsole.MarkupLine($"Failed to activate the profile. Please make sure that [bold]'{profile}' profile[/] exists in ForceSeatPM and custom apps can activate it.");
+            AnsiConsole.MarkupLine($"[red]Failed[/] to activate the profile.");
+            AnsiConsole.MarkupLine($"Please make sure that [bold]ForseSeatPM[/] app is running, [bold]'{profile}' profile[/] exists, and third-party apps can activate it.");
             return false;
         }
 
         bool isPlatformConnected = false;
-        AnsiConsole.Status().Start("Connecting to the MotionPlatform client... ", ctx =>
+        AnsiConsole.Status().Start("Waiting for the Motion Platform to be ready... ", ctx =>
         {
             var task = WaitForAllStates(20000, FSMI_PlatformCurrentState.RefRunCompleted);
             task.Wait();
             isPlatformConnected = task.Result;
         });
-        AnsiConsole.Write("Connecting to the MotionPlatform client... ");
+        AnsiConsole.Write("Waiting for the Motion Platform to be ready... ");
         
         if (!isPlatformConnected)
         {
-            AnsiConsole.MarkupLine("[red]failed[/].\nExiting... ");
+            AnsiConsole.MarkupLine("[red]failed[/].");
             return false;
         }
 
@@ -135,11 +139,12 @@ internal class Program : Command<Settings>
 
         if (!_mi.BeginMotionControl())
         {
-            AnsiConsole.MarkupLine("[red]Failed to start motion control![/]");
+            AnsiConsole.MarkupLine("[red]Failed[/] to start Motion Platform control.");
             return false;
         }
         else
         {
+            Task.Delay(500).Wait();
             _mi.Park(FSMI_ParkMode.ToCenter);
 
             bool hasCentralized = false;
